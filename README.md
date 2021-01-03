@@ -54,13 +54,20 @@ $sp = New-AzADServicePrincipal -DisplayName 'MicrosoftSyncShare'
 
 ## Defence 
 
-### Auditing federation trusts
+Install-module azureadpreview
+Connect-AzureAD  
+
+Install-module ExchangeOnlineManagement
+Connect-ExchangeOnline
+
+Install-module MSOnline
 Connect-MsolService  
+
+### Auditing federation trusts
 Get-MsolDomain | Select * / Get-AzureADDomain | Select *  
 Get-MsolFederationProperty (need to run this for each domain)  
 
 ### Auditing service principles
-Connect-AzureAD  
 Get-AzureADServicePrincipal  
 Get-AzureADServicePrincipal -all $true | Select *  
 Get-AzureADServicePrincipal -all $true | Where-Object{$_.KeyCredentials -ne $null}  
