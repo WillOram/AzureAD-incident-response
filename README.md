@@ -69,8 +69,8 @@ Get-MsolDomain | Select * / Get-AzureADDomain | Select *
 Get-MsolFederationProperty (need to run this for each domain)  
 Exchange Online  
 Get-FederationTrust | Format-List
-Get-FederatedOrganizationIdentifier -IncludeExtendedDomainInfo
-Get-FederatedOrganizaonIdenfier -IncludeExtendedDomainInfo | select-object -expandproperty Domains
+Get-FederatedOrganizationIdentifier -IncludeExtendedDomainInfo  
+Get-FederatedOrganizationIdentifier -IncludeExtendedDomainInfo | select-object -expandproperty Domains  
 
 ### Auditing service principles
 Get-AzureADServicePrincipal  
