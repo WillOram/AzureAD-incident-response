@@ -30,9 +30,9 @@ Open-AADIntOffice365Portal -ImmutableID $id -UseBuiltInCertificate -ByPassMFA $t
 (AuditLogs | where OperationName =~ "Set domain authentication")  
 (AuditLogs | where OperationName =~ "Set federation settings on domain" )  
 
-## Adding credentials to a service principle 
+### Adding credentials to a service principle 
 
-### Certificate 
+#### Certificate 
 $cert = New-SelfSignedCertificate -dnsname some.domain.com -CertStoreLocation cert:\LocalMachine\My -Provider “Microsoft Enhanced RSA and AES Cryptographic Provider”  
 $keyValue = [System.Convert]::ToBase64String($cert.GetRawCertData())   
 $sp = get-azureadserviceprincipal -searchstring SEARCHSTRING  
@@ -42,13 +42,13 @@ Connect-AzureAD  -Tenant TENANTID -ApplicationID APPID -CertificateThumbprint CE
 (AuditLogs | where OperationName =~ "Update service principal")
 (AuditLogs | where OperationName =~ "Add service principal credentials")
 
-### Password
+#### Password
 New-AzureADServicePrincipalPasswordCredential -objectid $sp.ObjectId -EndDate "01-01-2030 12:00:00" -StartDate "04-04-2020 12:00:00"  -Value PASSWORD  
 
 (AuditLogs | where OperationName =~ "Update service principal")
 (AuditLogs | where OperationName =~ "Add service principal credentials")
 
-### Create a new service principle 
+#### Create a new service principle 
 Get-AzureADServicePrincipal -all $true | Where-Object{$_.KeyCredentials -ne $null}  
 $sp = New-AzADServicePrincipal -DisplayName 'MicrosoftSyncShare'  
 
