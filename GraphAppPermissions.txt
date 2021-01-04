@@ -1,4 +1,4 @@
-
+PS> ($gps = Get-AzureADServicePrincipal -All $true | Where-Object {$_.DisplayName -eq "Microsoft Graph"}).AppRoles
 
 AllowedMemberTypes : {Application}
 Description        : Allow the application to access a subset of site collections without a signed in user.The specific site collections and the 
