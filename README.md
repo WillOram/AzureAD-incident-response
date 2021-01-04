@@ -78,6 +78,8 @@ Get-AzureADServicePrincipal -all $true | Select *
 Get-AzureADServicePrincipal -all $true | Where-Object{$_.KeyCredentials -ne $null} | Select *  
 Get-AzureADServicePrincipal -all $true | Where-Object{$_.PasswordCredentials -ne $null} | Select *   
 
+Reference for permissions - https://github.com/mepples21/azureadconfigassessment / https://github.com/mepples21/azureadconfigassessment/blob/master/permissiontable.csv
+
 ### Sentinel connectors
 AzureActiveDirectory  
 SecurityEvents  
