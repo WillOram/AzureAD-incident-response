@@ -64,14 +64,19 @@ Install-module MSOnline
 Connect-MsolService  
 
 ### Auditing federation trusts
+Azure AD  
 Get-MsolDomain | Select * / Get-AzureADDomain | Select *  
 Get-MsolFederationProperty (need to run this for each domain)  
+Exchange Online  
+Get-FederationTrust | Format-List
+Get-FederatedOrganizationIdentifier -IncludeExtendedDomainInfo
+Get-FederatedOrganizaonIdenfier -IncludeExtendedDomainInfo | select-object -expandproperty Domains
 
 ### Auditing service principles
 Get-AzureADServicePrincipal  
 Get-AzureADServicePrincipal -all $true | Select *  
-Get-AzureADServicePrincipal -all $true | Where-Object{$_.KeyCredentials -ne $null}  
-Get-AzureADServicePrincipal -all $true | Where-Object{$_.PasswordCredentials -ne $null}  
+Get-AzureADServicePrincipal -all $true | Where-Object{$_.KeyCredentials -ne $null} | Select *  
+Get-AzureADServicePrincipal -all $true | Where-Object{$_.PasswordCredentials -ne $null} | Select *   
 
 ### Sentinel connectors
 AzureActiveDirectory  
