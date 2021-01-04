@@ -95,6 +95,31 @@ https://github.com/cisagov/Sparrow/blob/develop/Sparrow.ps1
 Invoke-WebRequest 'https://github.com/cisagov/Sparrow/raw/develop/Sparrow.ps1' -OutFile 'Sparrow.ps1' -UseBasicParsing  
 
 ### Crowdstrike CRT
-https://github.com/CrowdStrike/CRT/blob/main/Get-CRTReport.ps1
+https://github.com/CrowdStrike/CRT/blob/main/Get-CRTReport.ps1  
+https://www.crowdstrike.com/blog/crowdstrike-launches-free-tool-to-identify-and-help-mitigate-risks-in-azure-active-directory/  
+
+App vs Service principal
+
+https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals#:~:text=principal%20object's%20properties.-,Relationship%20between%20application%20objects%20and%20service%20principals,use%20in%20a%20specific%20tenant.
+
+https://twitter.com/SwiftOnSecurity/status/1217942428243632128?s=20  
+
+https://www.youtube.com/watch?v=fpUZJxFK72k  
+
+https://dirkjanm.io/talks/  
+
+https://www.youtube.com/watch?v=SG2ibjuzRJM  
+
+https://www.youtube.com/watch?v=JEIR5oGCwdg  
+
+https://www.youtube.com/watch?v=LufXEPTlPak  
+
+https://vimeo.com/214855977  
+
+https://www.blackhillsinfosec.com/red-teaming-microsoft-part-1-active-directory-leaks-via-azure/  
+
+https://www.fireeye.com/blog/threat-research/2020/09/detecting-microsoft-365-azure-active-directory-backdoors.html
+
+https://www.youtube.com/watch?v=tJkjOnxcw6w
 
 
