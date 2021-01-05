@@ -168,10 +168,10 @@ PS> Get-AzureADTenantDetail | Select *
 
 [Crowdstrike blog on hunting for modifications](https://www.crowdstrike.com/blog/crowdstrike-launches-free-tool-to-identify-and-help-mitigate-risks-in-azure-active-directory/)
 * There is a good list in here of what to search for in Azure AD that goes further than the above including:
- * Reviewing trust relationships with partners including IT consultants, vendors and resellers 
- * Reviewing Azure AD allowed identity providers (SAML IDPs through direct federation or social logins)
- * Reviewing Azure B2B external identities’ access to the Azure portal 
- * Review environment for overly privileged service accounts that may have access to Azure
+  * Reviewing trust relationships with partners including IT consultants, vendors and resellers 
+  * Reviewing Azure AD allowed identity providers (SAML IDPs through direct federation or social logins)
+  * Reviewing Azure B2B external identities’ access to the Azure portal 
+  * Review environment for overly privileged service accounts that may have access to Azure
 
 [Microsoft blog explaining the difference between service principals and applicaitons](https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals)
 
