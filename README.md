@@ -97,7 +97,7 @@ PS> Connect-ExchangeOnline
 PS> Install-module MSOnline
 PS> Connect-MsolService  
 
-PS> Invoke-WebRequest 'https://github.com/cisagov/Sparrow/raw/develop/Sparrow.ps1' -OutFile 'Sparrow.ps1' -UseBasicParsing  
+PS> Invoke-WebRequest 'https://github.com/cisagov/Sparrow/raw/develop/Sparrow.ps1' -OutFile 'Sparrow.ps1' -UseBasicParsing   
 PS> .\Sparrow.ps1
 
 PS> Invoke-WebRequest 'https://github.com/CrowdStrike/CRT/blob/main/Get-CRTReport.ps1' -OutFile 'Get-CRTReport.ps1' -UseBasicParsing  
@@ -123,7 +123,9 @@ PS> Get-AzureADServicePrincipal
 PS> Get-AzureADServicePrincipal -all $true | Where-Object{$_.KeyCredentials -ne $null} | Select *  
 PS> Get-AzureADServicePrincipal -all $true | Where-Object{$_.PasswordCredentials -ne $null} | Select *   
 
-### Commands to manually look for service principals with risky permissions 
+### Commands to manually search for service principals with credentials and risky permissions 
+
+See scripts output in Sparrow and CRT tool. 
 
 App permissions reference https://docs.microsoft.com/en-us/graph/permissions-reference   
 
@@ -146,6 +148,13 @@ Data sources from blog SolarWinds Post-Compromise Hunting with Azure Sentinel:
 
 Sentinel connectors:
 * AzureActiveDirectory  
+  * Azure AD Audit Logs
+  * Azure AD Sign-In Logs
+  * Azure AD Managed Identity Sign-In Logs (Preview) (Needs to be configured in Azure AD diagnostic settings)
+  * Azure AD Non-Interactive User Sign-In Logs (Preview) (Needs to be configured in Azure AD diagnostic settings)
+  * Azure AD Service Principal Sign-In Logs (Preview) (Needs to be configured in Azure AD diagnostic settings)
+  * Azure AD Provisioning Logs (Needs to be configured in Azure AD diagnostic settings)
+  * Azure AD Risky Sign-In events (Needs to be configured in Azure AD diagnostic settings)
 * SecurityEvents  
 * Office365  
 * Microsoft 365 Defender  
