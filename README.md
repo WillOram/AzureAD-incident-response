@@ -133,12 +133,22 @@ Creat a test app https://docs.microsoft.com/en-gb/azure/active-directory/develop
 
 Microsoft blog references Mail.Read and Mail.ReadWrite
 
-### Sentinel connectors
+### Data sources
 
-AzureActiveDirectory  
-SecurityEvents  
-Office365  
-Microsoft 365 Defender  
+Data sources from blog SolarWinds Post-Compromise Hunting with Azure Sentinel:
+* Azure Active Directory logs - audit logs, sign-in logs (if not already onboarded to Sentinel retained for 30 days in Azure Azure Active Directory)
+* Microsoft 365 Defender - includes MDATP raw data
+* Microsoft Defender for Endpoint
+* Office 365 - OfficeActivity (Exchange Online, OneDrive, Teams) (if not already onboarded to Sentinel retained for 90 days E3 / 1 year E5 in the Unified Audit Logs. These have to be manually enabled by the organisation.)
+* Windows security events - with process creation auditing configured on endpoints (could be re-written into rules based on DeviceProcessEvents / Defender for Endpoint)
+* AWS
+* AzureMonitor(IIS)
+
+Sentinel connectors:
+* AzureActiveDirectory  
+* SecurityEvents  
+* Office365  
+* Microsoft 365 Defender  
 
 ### Other useful commands
 
