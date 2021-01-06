@@ -200,5 +200,5 @@ https://www.youtube.com/watch?v=tJkjOnxcw6w
 
 https://i.blackhat.com/USA-20/Thursday/us-20-Bienstock-My-Cloud-Is-APTs-Cloud-Investigating-And-Defending-Office-365.pdf
 
-
+https://insen.github.io/blog/2017/09/24/Azure-AAD-with-Office-365/
 
