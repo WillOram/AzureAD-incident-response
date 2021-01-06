@@ -27,6 +27,7 @@ Background reading on defending against the threat:
 * Enable audit logging in the Security & Compliance Center. 
 * Create and configure a test application in Azure AD, configure Mail.Read permissions. Use the web application quick-start to log-in test users to the app and require them to consent access to their data. 
 
+
 ### Export ADFS certificate
 
 PS> Export-AADIntADFSSigningCertificate -filename ADFSSigningCertificate.pfx  
@@ -177,6 +178,8 @@ PS> Get-AzureADTenantDetail | Select *
 
 [Microsoft video on modern authentication methods including ADFS and SAML](https://twitter.com/SwiftOnSecurity/status/1217942428243632128?s=20) 
 
+[FireEye blog on carrying out attacks](https://www.fireeye.com/blog/threat-research/2020/09/detecting-microsoft-365-azure-active-directory-backdoors.html)
+
 https://www.youtube.com/watch?v=fpUZJxFK72k  
 
 https://dirkjanm.io/talks/  
@@ -194,5 +197,8 @@ https://www.blackhillsinfosec.com/red-teaming-microsoft-part-1-active-directory-
 https://www.fireeye.com/blog/threat-research/2020/09/detecting-microsoft-365-azure-active-directory-backdoors.html
 
 https://www.youtube.com/watch?v=tJkjOnxcw6w
+
+https://i.blackhat.com/USA-20/Thursday/us-20-Bienstock-My-Cloud-Is-APTs-Cloud-Investigating-And-Defending-Office-365.pdf
+
 
 
