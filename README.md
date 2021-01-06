@@ -26,7 +26,7 @@ Background reading on defending against the threat:
 * Configure the diagnostic settings for Azure AD to collect all logs data types. 
 * Enable audit logging in the Security & Compliance Center. 
 * Create and configure a test application in Azure AD, configure Mail.Read permissions. Use the web application quick-start to log-in test users to the app and require them to consent access to their data. 
-
+* Create and configure a test application in Azure AD, configure Mail.Read permissions. Grant [admin consent](https://docs.microsoft.com/en-us/azure/active-directory/manage-apps/grant-admin-consent) to the applicaiton. 
 
 ### Export ADFS certificate
 
@@ -112,7 +112,7 @@ PS> Get-MsolDomain | Format-List
 PS> Get-AzureADDomain | Format-List (newer version of the command above)
 PS> Get-MsolFederationProperty -DomainName ******* | Format-List
 
-**Exchange Online** 
+**Exchange Online** (unclear if these can be changed, Exchange Online PowerShell APIs to configure these state they only work for on-prem Exchange)
 
 PS> Get-FederationTrust | Format-List
 PS> Get-FederatedOrganizationIdentifier -IncludeExtendedDomainInfo  | Format-List
