@@ -83,7 +83,7 @@ AuditLogs | where OperationName =~ "Add service principal credentials"
 
 #### Create a new service principle 
 
-PS> Get-AzureADServicePrincipal -all $true | Where-Object{$_.KeyCredentials -ne $null}  
+PS> Get-AzureADServicePrincipal -all $true | Where-Object{$\_.KeyCredentials -ne $null}  
 PS> $sp = New-AzADServicePrincipal -DisplayName 'MicrosoftSyncShare'  
 PS> New-AzureADServicePrincipalKeyCredential -objectid $sp.ObjectId -EndDate "01-01-2022 12:00:00" -StartDate "01-03-2021 14:12:00" -CustomKeyIdentifier "Test" -Type AsymmetricX509Cert -Usage Verify -Value $keyValue  
 
@@ -121,8 +121,8 @@ PS> Get-FederatedOrganizationIdentifier -IncludeExtendedDomainInfo | select-obje
 ### Commands to manually service principals with credentials
 
 PS> Get-AzureADServicePrincipal  
-PS> Get-AzureADServicePrincipal -all $true | Where-Object{$_.KeyCredentials -ne $null} | Select *  
-PS> Get-AzureADServicePrincipal -all $true | Where-Object{$_.PasswordCredentials -ne $null} | Select *   
+PS> Get-AzureADServicePrincipal -all $true | Where-Object{$\_.KeyCredentials -ne $null} | Select *  
+PS> Get-AzureADServicePrincipal -all $true | Where-Object{$\_.PasswordCredentials -ne $null} | Select *   
 
 ### Commands to manually search for service principals with credentials and risky permissions 
 
@@ -135,10 +135,10 @@ PS> # Get Azure AD App role assignments using objectID of the Service Principal
 PS> $assignments = Get-AzureADServiceAppRoleAssignment -ObjectId $sp.ObjectId -All $true  
 
 PS> # Get all delegated permissions for the service principal  
-PS> $spOAuth2PermissionsGrants = Get-AzureADOAuth2PermissionGrant -All $true| Where-Object {$_.clientId -eq $sp.ObjectId}  
+PS> $spOAuth2PermissionsGrants = Get-AzureADOAuth2PermissionGrant -All $true| Where-Object {$\_.clientId -eq $sp.ObjectId}  
 
 PS> # Get all application permissions for the service principal  
-PS> $spApplicationPermissions = Get-AzureADServiceAppRoleAssignedTo -ObjectId $sp.ObjectId -All $true | Where-Object { $_.PrincipalType -eq "ServicePrincipal" }  
+PS> $spApplicationPermissions = Get-AzureADServiceAppRoleAssignedTo -ObjectId $sp.ObjectId -All $true | Where-Object { $\_.PrincipalType -eq "ServicePrincipal" }  
 
 App permissions reference https://docs.microsoft.com/en-us/graph/permissions-reference   
 
