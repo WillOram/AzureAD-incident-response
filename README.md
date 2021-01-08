@@ -151,16 +151,16 @@ PS> Get-AzureADServicePrincipal -all $true | Where-Object{$\_.PasswordCredential
 
 ### Commands to manually search for service principals with credentials and risky permissions 
 
-See scripts output in Sparrow and CRT tool. 
+See scripts output in Sparrow and CRT tool.  
 
-PS> # Get Service Principal using objectId 
+PS> # Get Service Principal using objectId  
 PS> $sp = Get-AzureADServicePrincipal -ObjectId "OBJECTID"    
 
-PS> # Get Azure AD App role assignments using objectID of the Service Principal (users) 
-PS> $assignments = Get-AzureADServiceAppRoleAssignment -ObjectId $sp.ObjectId -All $true  
+PS> # Get Azure AD App role assignments using objectID of the Service Principal (users)  
+PS> $assignments = Get-AzureADServiceAppRoleAssignment -ObjectId $sp.ObjectId -All $true   
 
 PS> # Get all delegated permissions for the service principal  
-PS> $spOAuth2PermissionsGrants = Get-AzureADOAuth2PermissionGrant -All $true| Where-Object {$\_.clientId -eq $sp.ObjectId} | Format-List
+PS> $spOAuth2PermissionsGrants = Get-AzureADOAuth2PermissionGrant -All $true| Where-Object {$\_.clientId -eq $sp.ObjectId} | Format-List  
 
 PS> # Get all application permissions for the service principal  
 PS> $spApplicationPermissions = Get-AzureADServiceAppRoleAssignedTo -ObjectId $sp.ObjectId -All $true | Where-Object { $\_.PrincipalType -eq "ServicePrincipal" }  
