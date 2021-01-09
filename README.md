@@ -3,9 +3,19 @@
 Rough notes for understanding the techniques used by the Solarwinds actor used to facilitate long-term access to Microsoft environments. These techniques allowed the attacker to establish difficult-to-detect and remove persistence mechanisms.
 
 Three techniques: 
+* **Stealing ADFS token-signing certificates to move laterally to cloud environments and facilitate long-term access** - Stealing token-signing certificates from on-premises ADFS servers to forge SAML tokens - "Golden SAML" attack. 
+* **Modifying federation trusts to facilitate long-term access to cloud services** - adding new federation trusts to or modifying existing federation trusts to add new token-signing certificates, to forge SAML authentication tokens. These can either be configured in Azure AD with PowerShell management APIs, or configured on an ADFS server and synced with Azure AD. 
 * **Abusing service principals to provide long-term API-based access to cloud services** - adding credentials to existing service principals, adding new service principals with credentials, adding permissions to service principals and applications to access Microsoft Graph API. 
-* **Modifying federation trusts to facilitate long-term access to cloud services** - adding new federation trusts or modifying existing federation trusts to add new token-signing certificates, to forge SAML authentication tokens. 
-* **Stealing ADFS token-signing certificates to move laterally to cloud environments and facilitate long-term access** - Stealing token-signing certificates from on-premises ADFS servers to forge SAML tokens. 
+
+Microsoft [four stages of an attack](https://us-cert.cisa.gov/ncas/alerts/aa21-008a): 
+* **Stage 1: Forging a trusted authentication token used to access resources that trust the on-premises identity provider** 
+  * Detection Method 1: Correlating service provider login events with corresponding authentication events in Active Directory Federation Services (ADFS) and Domain Controllers
+  * Detection Method 2: Identifying certificate export events in ADFS
+  * Detection Method 3: Customizing SAML response to identify irregular access
+  * Detection Method 4: Detecting malicious ADFS trust modification
+* **Stage 2: Using the forged authentication token to create configuration changes in the Azure AD (establishing a foothold)**
+* **Stage 3: Acquiring an OAuth access token for the application using the forged credentials added to an existing application or service principal and calling APIs with the permissions assigned to that application**
+* **Stage 4: Once access has been established, the threat actor Uses Microsoft Graph API to conduct action on objectives from an external RESTful API (queries impersonating existing applications)**
 
 - [Notes for simulating attacks in a lab](#notes-for-simulating-attacks-in-a-lab)
   * [Exporting an ADFS certificate](#exporting-an-adfs-certificate)
