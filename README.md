@@ -1,10 +1,11 @@
 # Azure AD Incident Response
 
-Rough notes for understanding the modifications the Solarwinds actor made to Azure AD to facilitate long-term access. The two techniques were observed: 
-* Abusing federation trusts - adding new federation trusts, modifying existing federation trusts to add new token-signing certificates
-* Abusing service principals - adding credentials to existing service principals, adding new service principals with credentials, adding permissions to service principals and applications to access Microsoft Graph API
+Rough notes for understanding the techniques used by the Solarwinds actor used to facilitate long-term access to Microsoft environments. These techniques allowed the attacker to establish difficult-to-detect and remove persistence mechanisms.
 
-Also on a third technique the actor was observed using to facilite long term access, stealing ADFS token-signing certificates to forge SAML tokens.
+Three techniques: 
+* **Abusing service principals to provide long-term API-based access to cloud services** - adding credentials to existing service principals, adding new service principals with credentials, adding permissions to service principals and applications to access Microsoft Graph API. 
+* **Modifying federation trusts to facilitate long-term access to cloud services** - adding new federation trusts or modifying existing federation trusts to add new token-signing certificates, to forge SAML authentication tokens. 
+* **Stealing ADFS token-signing certificates to move laterally to cloud environments and facilitate long-term access** - Stealing token-signing certificates from on-premises ADFS servers to forge SAML tokens. 
 
 - [Notes for simulating attacks in a lab](#notes-for-simulating-attacks-in-a-lab)
   * [Exporting an ADFS certificate](#exporting-an-adfs-certificate)
@@ -18,11 +19,12 @@ Also on a third technique the actor was observed using to facilite long term acc
   * [Commands to manually audit federation trusts](#commands-to-manually-audit-federation-trusts)
   * [Commands to manually service principals with credentials](#commands-to-manually-service-principals-with-credentials)
   * [Commands to manually search for service principals with credentials and risky permissions](#commands-to-manually-search-for-service-principals-with-credentials-and-risky-permissions)
-  * [Data sources](#data-sources)
+  * [Azure Sentinel data sources to configure](#Azure-Sentinel-data-sources-to-configure)
   * [Other useful commands](#other-useful-commands)
 - [Further references](#further-references)
 
 Background reading on defending against the threat: 
+* [Detecting Post-Compromise Threat Activity in Microsoft Cloud Environments](https://us-cert.cisa.gov/ncas/alerts/aa21-008a)
 * [Microsoft technical blog on SolarWinds attacks](https://msrc-blog.microsoft.com/2020/12/13/customer-guidance-on-recent-nation-state-cyber-attacks/)
 * [Microsoft blog on Azure Sentinel Post-Compromise Hunting](https://techcommunity.microsoft.com/t5/azure-sentinel/solarwinds-post-compromise-hunting-with-azure-sentinel/ba-p/1995095)
 * [Microsoft advice for incident responders](https://www.microsoft.com/security/blog/2020/12/21/advice-for-incident-responders-on-recovery-from-systemic-identity-compromises/)
@@ -38,7 +40,7 @@ Background reading on defending against the threat:
 * Domain join all the other systems (after configuring the DC as the DNS server for the VNet). 
 * Use AD Connect to configure federation with Azure AD, including configuring the ADFS server and the WAP. 
 * Configure 443 access to the WAP from the internet.
-* Configure Sentinel, onboard the security logs from all systems and the Azure AD audit logs. 
+* Configure Azure Sentinel, onboard the security logs from all systems and the Azure AD audit logs. 
 * Configure the diagnostic settings for Azure AD to collect all logs data types. 
 * Enable audit logging in the Security & Compliance Center. 
 * Create and configure a test application in Azure AD, configure Mail.Read permissions. Use the web application quick-start to log-in test users to the app and require them to consent access to their data. 
@@ -83,8 +85,7 @@ PS> ConvertTo-AADIntBackdoor -domain maliciousdomain.com
 PS> get-msoluser | select UserPrincipalName, ImmutableId  
 PS> Open-AADIntOffice365Portal -ImmutableID $id -UseBuiltInCertificate -ByPassMFA $true -Issuer ISSUER  
 
-Creates the Azure AD audit log:
-AuditLogs | where OperationName =~ "Set domain authentication"
+Creates the Azure AD audit log event "Set domain authentication"
 
 ### Adding credentials to a service principle 
 
@@ -96,15 +97,12 @@ PS> $sp = get-azureadserviceprincipal -searchstring SEARCHSTRING
 PS> New-AzureADServicePrincipalKeyCredential -objectid $sp.ObjectId -EndDate "01-01-2022 12:00:00" -StartDate "01-03-2021 14:12:00" -CustomKeyIdentifier "Test" -Type AsymmetricX509Cert -Usage Verify -Value $keyValue  
 PS> Connect-AzureAD  -Tenant TENANTID -ApplicationID APPID -CertificateThumbprint CERTTHUMBPRINT  
 
-Creates the Azure AD audit log:
-AuditLogs | where OperationName =~ "Add service principal credentials"
-
+Creates the Azure AD audit log event "Add service principal credentials"
 #### Password
 
 PS> New-AzureADServicePrincipalPasswordCredential -objectid $sp.ObjectId -EndDate "01-01-2030 12:00:00" -StartDate "04-04-2020 12:00:00"  -Value PASSWORD  
 
-Creates the log:
-AuditLogs | where OperationName =~ "Add service principal credentials"
+Creates the Azure AD audit log event "Add service principal credentials"
 
 ### Creating a new service principle 
 
@@ -114,7 +112,7 @@ PS> New-AzureADServicePrincipalKeyCredential -objectid $sp.ObjectId -EndDate "01
 
 ## Auditing for backdoors 
 
-PS> Install-module azureadpreview  
+PS> Install-module AzureADPreview  
 PS> Connect-AzureAD  
 
 PS> Install-module ExchangeOnlineManagement  
@@ -123,11 +121,15 @@ PS> Connect-ExchangeOnline
 PS> Install-module MSOnline  
 PS> Connect-MsolService  
 
+PS> # CISA's Sparrow  
 PS> Invoke-WebRequest 'https://github.com/cisagov/Sparrow/raw/develop/Sparrow.ps1' -OutFile 'Sparrow.ps1' -UseBasicParsing   
 PS> .\Sparrow.ps1  
 
+PS> # CrowdStrike's Azure Reporting Tool (CRT)  
 PS> Invoke-WebRequest 'https://github.com/CrowdStrike/CRT/blob/main/Get-CRTReport.ps1' -OutFile 'Get-CRTReport.ps1' -UseBasicParsing  
 PS> .\Get-CRTReport.ps1  
+
+PS> # Open-source utility Hawk  
 
 ### Commands to manually audit federation trusts
 
@@ -143,13 +145,21 @@ PS> Get-FederationTrust | Format-List
 PS> Get-FederatedOrganizationIdentifier -IncludeExtendedDomainInfo  | Format-List
 PS> Get-FederatedOrganizationIdentifier -IncludeExtendedDomainInfo | select-object -expandproperty Domains  
 
-### Commands to manually service principals with credentials
+### Commands to manually audit service principals
+
+* CISA Sparrow script provides the best data for this
+* Audit the creation and use of credentials for service principal. 
+* Review the permissions assigned to service principles. 
+* Audit the assignment of credentials to applications that allow non-interactive sign-in by the application and permissions for the Microsoft Graph API.
+* Look for unusual application usage, such as use of dormant applications.
+
+#### Review service principals with credentials 
 
 PS> Get-AzureADServicePrincipal  
 PS> Get-AzureADServicePrincipal -all $true | Where-Object{$\_.KeyCredentials -ne $null} | Select *  
 PS> Get-AzureADServicePrincipal -all $true | Where-Object{$\_.PasswordCredentials -ne $null} | Select *   
 
-### Commands to manually search for service principals with credentials and risky permissions 
+#### Review service principals with credentials and risky permissions 
 
 See scripts output in Sparrow and CRT tool.  
 
@@ -182,19 +192,9 @@ Creat a test app https://docs.microsoft.com/en-gb/azure/active-directory/develop
 
 Microsoft blog references Mail.Read and Mail.ReadWrite
 
-### Data sources
+### Azure Sentinel data sources to configure
 
-Data sources from blog SolarWinds Post-Compromise Hunting with Azure Sentinel:
-* Azure Active Directory logs - audit logs, sign-in logs (if not already onboarded to Sentinel retained for 30 days in Azure Azure Active Directory)
-* Microsoft 365 Defender - includes MDATP raw data
-* Microsoft Defender for Endpoint
-* Office 365 - OfficeActivity (Exchange Online, OneDrive, Teams) (if not already onboarded to Sentinel retained for 90 days E3 / 1 year E5 in the Unified Audit Logs. These have to be manually enabled by the organisation.)
-* Windows security events - with process creation auditing configured on endpoints (could be re-written into rules based on DeviceProcessEvents / Defender for Endpoint)
-* AWS
-* AzureMonitor(IIS)
-
-Sentinel connectors:
-* AzureActiveDirectory  
+* AzureActiveDirectory (if not already onboarded to Azure Sentinel retained for 30 days in Azure Azure Active Directory)
   * Azure AD Audit Logs
   * Azure AD Sign-In Logs
   * Azure AD Managed Identity Sign-In Logs (Preview) (Needs to be configured in Azure AD diagnostic settings)
@@ -202,9 +202,11 @@ Sentinel connectors:
   * Azure AD Service Principal Sign-In Logs (Preview) (Needs to be configured in Azure AD diagnostic settings)
   * Azure AD Provisioning Logs (Needs to be configured in Azure AD diagnostic settings)
   * Azure AD Risky Sign-In events (Needs to be configured in Azure AD diagnostic settings)
-* SecurityEvents  
-* Office365  
-* Microsoft 365 Defender  
+* SecurityEvents - with process creation auditing configured on tier 0 systems (if Defender is not deployed and DeviceProcessEvents can be used)
+* Office365 - OfficeActivity (Exchange Online, OneDrive, Teams) (if not already onboarded to Sentinel retained for 90 days E3 / 1 year E5 in the Unified Audit Logs. These have to be manually enabled by the organisation.)
+* Microsoft 365 Defender - includes MDATP raw data
+* Microsoft Defender for Endpoint
+* AzureMonitor(IIS)
 
 ### Other useful commands
 
