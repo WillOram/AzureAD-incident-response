@@ -122,7 +122,7 @@ PS> New-AzureADServicePrincipalKeyCredential -objectid $sp.ObjectId -EndDate "01
 
 ## Auditing for backdoors 
 
-PS> Install-module AzureADPreview  
+PS> Install-module AzureADPreview -AllowClobber
 PS> Connect-AzureAD  
 
 PS> Install-module ExchangeOnlineManagement  
@@ -131,15 +131,21 @@ PS> Connect-ExchangeOnline
 PS> Install-module MSOnline  
 PS> Connect-MsolService  
 
+PS> Install-Module AZ
+PS> Connect-AzAccount
+
 PS> # CISA's Sparrow  
 PS> Invoke-WebRequest 'https://github.com/cisagov/Sparrow/raw/develop/Sparrow.ps1' -OutFile 'Sparrow.ps1' -UseBasicParsing   
 PS> .\Sparrow.ps1  
 
 PS> # CrowdStrike's Azure Reporting Tool (CRT)  
-PS> Invoke-WebRequest 'https://github.com/CrowdStrike/CRT/blob/main/Get-CRTReport.ps1' -OutFile 'Get-CRTReport.ps1' -UseBasicParsing  
+PS> Invoke-WebRequest 'https://github.com/CrowdStrike/CRT/raw/main/Get-CRTReport.ps1' -OutFile 'Get-CRTReport.ps1' -UseBasicParsing  
 PS> .\Get-CRTReport.ps1  
 
-PS> # Open-source utility Hawk  
+PS> # AzureHound
+PS> Invoke-WebRequest 'https://raw.githubusercontent.com/BloodHoundAD/AzureHound/master/AzureHound.ps1' -OutFile 'AzureHound.ps1' -UseBasicParsing
+PS> . .\AzureHound.ps1
+PS> Invoke-AzureHound
 
 ### Commands to manually audit federation trusts
 
