@@ -142,10 +142,14 @@ PS> # CrowdStrike's Azure Reporting Tool (CRT)
 PS> Invoke-WebRequest 'https://github.com/CrowdStrike/CRT/raw/main/Get-CRTReport.ps1' -OutFile 'Get-CRTReport.ps1' -UseBasicParsing  
 PS> .\Get-CRTReport.ps1  
 
-PS> # AzureHound
-PS> Invoke-WebRequest 'https://raw.githubusercontent.com/BloodHoundAD/AzureHound/master/AzureHound.ps1' -OutFile 'AzureHound.ps1' -UseBasicParsing
-PS> . .\AzureHound.ps1
-PS> Invoke-AzureHound
+PS> # AzureHound  
+PS> Invoke-WebRequest 'https://raw.githubusercontent.com/BloodHoundAD/AzureHound/master/AzureHound.ps1' -OutFile 'AzureHound.ps1' -UseBasicParsing  
+PS> . .\AzureHound.ps1  
+PS> Invoke-AzureHound  
+
+PS> # Hawk
+PS> Install-module hawk
+PS> start-hawktenantinvestigation  
 
 ### Commands to manually audit federation trusts
 
