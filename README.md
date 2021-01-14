@@ -2,12 +2,22 @@
 
 Rough notes for understanding the techniques used by the Solarwinds actor used to facilitate long-term access to Microsoft environments. These techniques allowed the attacker to establish difficult-to-detect and remove persistence mechanisms.
 
-Three techniques: 
-* **Stealing ADFS token-signing certificates to move laterally to cloud environments and facilitate long-term access** - Stealing token-signing certificates from on-premises ADFS servers to forge SAML tokens - "Golden SAML" attack. 
-* **Modifying federation trusts to facilitate long-term access to cloud services** - adding new federation trusts to or modifying existing federation trusts to add new token-signing certificates, to forge SAML authentication tokens. These can either be configured in Azure AD with PowerShell management APIs, or configured on an ADFS server and synced with Azure AD. 
-* **Abusing service principals to provide long-term API-based access to cloud services** - adding credentials to existing service principals, adding new service principals with credentials, adding permissions to service principals and applications to access Microsoft Graph API. 
+Four techniques: 
 
-Microsoft [four stages of an attack](https://us-cert.cisa.gov/ncas/alerts/aa21-008a): 
+__On-premise__
+* **Stealing ADFS token-signing certificates to move laterally to cloud environments and facilitate long-term access** - Stealing token-signing certificates from on-premises ADFS servers to forge SAML tokens - "Golden SAML" attack. Allow anyone with the certificate to impersonate any user to your cloud environment. 
+* **Modifying privileged users to cloud services (including their credentials) through account synchronization** - Setting passwords for accounts in privileged cloud groups. Adding accounts to privileged cloud groups. 
+
+__Cloud__
+* **Creating or modifying federation trusts to facilitate long-term access to cloud services** - adding new federation trusts to or modifying existing federation trusts to add new token-signing certificates, to forge SAML authentication tokens. These can either be configured in Azure AD with PowerShell management APIs, or configured on an ADFS server and synced with Azure AD. Allow anyone with the malicious addded certificate to impersonate any user to your cloud environment. 
+* **Creating or modifying service principals to provide long-term API-based access to cloud services** - adding credentials to existing service principals, adding new service principals with credentials, adding permissions to service principals and applications to access Microsoft Graph API. Allow anyone with the credential to access data via APIs from your cloud services. 
+
+__Third-party__
+* **Stealing the certificates used for service principals to provide long-term API-based access to cloud services** -- stealing certificates used to authenticate with service principals (see the attack against Mimecast)
+
+Example of how these techniques are used in practice: 
+
+Microsoft [four stages of an attack](https://us-cert.cisa.gov/ncas/alerts/aa21-008a) to go from priviliged on premises access to persistent access to data from cloud services. 
 * **Stage 1: Forging a trusted authentication token used to access resources that trust the on-premises identity provider** 
   * Detection Method 1: Correlating service provider login events with corresponding authentication events in Active Directory Federation Services (ADFS) and Domain Controllers
   * Detection Method 2: Identifying certificate export events in ADFS
@@ -17,21 +27,27 @@ Microsoft [four stages of an attack](https://us-cert.cisa.gov/ncas/alerts/aa21-0
 * **Stage 3: Acquiring an OAuth access token for the application using the forged credentials added to an existing application or service principal and calling APIs with the permissions assigned to that application**
 * **Stage 4: Once access has been established, the threat actor Uses Microsoft Graph API to conduct action on objectives from an external RESTful API (queries impersonating existing applications)**
 
-- [Notes for simulating attacks in a lab](#notes-for-simulating-attacks-in-a-lab)
-  * [Exporting an ADFS certificate](#exporting-an-adfs-certificate)
-  * [Modifying an existing federation trust](#modifying-an-existing-federation-trust)
-  * [Adding a malicious federation trust](#adding-a-malicious-federation-trust)
-  * [Adding credentials to a service principle](#adding-credentials-to-a-service-principle)
-    - [Certificate](#certificate)
-    - [Password](#password)
-  * [Creating a new service principle](#creating-a-new-service-principle)
-- [Auditing for backdoors](#auditing-for-backdoors)
-  * [Commands to manually audit federation trusts](#commands-to-manually-audit-federation-trusts)
-  * [Commands to manually service principals with credentials](#commands-to-manually-service-principals-with-credentials)
-  * [Commands to manually search for service principals with credentials and risky permissions](#commands-to-manually-search-for-service-principals-with-credentials-and-risky-permissions)
-  * [Azure Sentinel data sources to configure](#Azure-Sentinel-data-sources-to-configure)
-  * [Other useful commands](#other-useful-commands)
-- [Further references](#further-references)
+- [Azure AD Incident Response](#azure-ad-incident-response)
+  * [Notes for simulating attacks in a lab](#notes-for-simulating-attacks-in-a-lab)
+    + [Exporting an ADFS certificate](#exporting-an-adfs-certificate)
+    + [Modifying an existing federation trust](#modifying-an-existing-federation-trust)
+    + [Adding a malicious federation trust](#adding-a-malicious-federation-trust)
+    + [Adding credentials to a service principle](#adding-credentials-to-a-service-principle)
+      - [Certificate](#certificate)
+      - [Password](#password)
+    + [Creating a new service principle](#creating-a-new-service-principle)
+  * [Auditing for backdoors](#auditing-for-backdoors)
+    + [Commands to manually audit federation trusts](#commands-to-manually-audit-federation-trusts)
+    + [Commands to manually audit service principals](#commands-to-manually-audit-service-principals)
+      - [Review service principals with credentials](#review-service-principals-with-credentials)
+      - [Review service principals with credentials and risky permissions](#review-service-principals-with-credentials-and-risky-permissions)
+  * [Detecting for the use of attacks](#detecting-for-the-use-of-attacks)
+    + [Use of token-signing certificates to spoof SAML tokens](#Use-of-token-signing-certificates-to-spoof-SAML-tokens)
+    + [Investigate suspect service principals](#investigate-suspect-service-principals)
+    + [Azure Sentinel data sources to configure](#azure-sentinel-data-sources-to-configure)
+    + [Other useful commands](#other-useful-commands)
+  * [Further references](#further-references)
+
 
 Background reading on defending against the threat: 
 * [Detecting Post-Compromise Threat Activity in Microsoft Cloud Environments](https://us-cert.cisa.gov/ncas/alerts/aa21-008a)
@@ -203,7 +219,6 @@ PS> $GraphSP = Get-AzureADServicePrincipal -All $true | Where-Object {$\_.Displa
 PS> $GraphAppRoles = $GraphSP.AppRoles | Select-Object -Property AllowedMemberTypes, Id, Value    
 PS> $GraphAppRoles| Where-Object {$\_.Id -eq "e2a3a72e-5f79-4c64-b1b1-878b674786c9" -or $\_.Id -eq "810c84a8-4a9e-49e6-bf7d-12d183f40d01"}    
 
-
 App permissions reference https://docs.microsoft.com/en-us/graph/permissions-reference   
 
 List of risky app permissions https://github.com/mepples21/azureadconfigassessment  
@@ -211,6 +226,23 @@ List of risky app permissions https://github.com/mepples21/azureadconfigassessme
 Creat a test app https://docs.microsoft.com/en-gb/azure/active-directory/develop/quickstart-v2-javascript   
 
 Microsoft blog references Mail.Read and Mail.ReadWrite
+
+Mimecast: Mimecast ask organisations to add an application/service principal to Azure AD and add a certificate to that service principal, allowing Mimecast to authenticate to it. They then ask organisations to assign that service principal the permissions __full_access_as_app__ to __Office 365 Exchange Online__. See: https://community.mimecast.com/s/article/Creating-an-Office-365-Association-for-Server-Connections-1061681132
+
+## Detecting for the use of attacks 
+
+### Use of token-signing certificates to spoof SAML tokens
+
+Azure AD UserAuthenticationMethod: 16457 indicates a password with MFA was satisfied by a federated identity provider: https://twitter.com/ItsReallyNick/status/1349536271010574338?s=20
+
+### Investigate suspect service principals
+
+** AADServicePrincipalSignInLogs **  
+* In preview for Azure AD. Requires additional configuration to be sent to Sentinel (on the Azure AD “Diagnostic Setting” page).   
+
+** MailItemsAccessed  **
+* For customers with G5 or E5 licensing levels, the MailItemsAccessed log should show applications accessing users’ mailboxes. This log is enabled by default for users that are assigned an Office 365 or Microsoft 365 E5 license or for organizations with a Microsoft 365 E5 Compliance add-on subscription.  
+* The MailItemsAccessed mailbox auditing action covers all mail protocols: POP, IMAP, MAPI, EWS, Exchange ActiveSync, and REST.
 
 ### Azure Sentinel data sources to configure
 
