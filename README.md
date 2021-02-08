@@ -1,6 +1,6 @@
 # Azure AD Incident Response
 
-Rough notes for understanding the techniques used by the Solarwinds actor used to facilitate long-term access to Microsoft environments. These techniques allowed the attacker to establish difficult-to-detect and remove persistence mechanisms.
+Rough notes for understanding the difficult-to-detect techniques used by the Solarwinds actor used to gain long-term access to Microsoft cloud services. Also a Azure AD reconnasonce tool that uses Public APIs to help detect Azure AD tenants with modified federation settings. 
 
 Four techniques: 
 
