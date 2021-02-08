@@ -1,6 +1,6 @@
 # Azure AD Incident Response
 
-Rough notes for understanding the difficult-to-detect techniques used by the Solarwinds actor used to gain long-term access to Microsoft cloud services. Also a Azure AD reconnasonce tool that uses Public APIs to help detect Azure AD tenants with modified federation settings. 
+Rough notes for understanding the difficult-to-detect techniques used by the Solarwinds actor used to gain long-term access to Microsoft cloud services. Also [an Azure AD reconnasonce tool](https://github.com/WillOram/AzureAD-incident-response/blob/main/azureadrecon.py) that uses Public APIs to help detect Azure AD tenants with modified federation settings. 
 
 Four techniques: 
 
