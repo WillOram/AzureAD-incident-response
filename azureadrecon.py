@@ -8,13 +8,16 @@ from io import StringIO
 from urllib import request
 from cryptography import x509
 from urllib.parse import urlparse
+from argparse import RawTextHelpFormatter
 from cryptography.hazmat.backends import default_backend
 
-parser = argparse.ArgumentParser(description='Return Azure AD federation information')
-parser.add_argument('--domain', type=str, required=True,
-                    help='Domain to enumerate')
-parser.add_argument('--outfile', type=str, required=True,
-                    help='CSV output file')
+parser = argparse.ArgumentParser(description="""
+Return Azure AD tenant information, including:
+    - All domains configured on the Azure AD tenant
+    - The configuration of each domain (managed or federated)
+    - One of two token-signing certificates configured in Azure AD for any federated domains
+    - The token-signing certificates configured in ADFS for any federated domains that use ADFS
+""", formatter_class=RawTextHelpFormatter)
 
 args = parser.parse_args()
 domain = args.domain
@@ -69,7 +72,6 @@ def get_domain_login_information(domain):
     # Get login information for domain
 
     user_realm_url = "https://login.microsoftonline.com/getuserrealm.srf?login=" + domain + "&xml=1"
-
     response_raw = request.urlopen(user_realm_url).read()
     # print(response_raw)
     return etree.fromstring(response_raw)
