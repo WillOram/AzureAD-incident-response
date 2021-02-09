@@ -302,3 +302,4 @@ https://i.blackhat.com/USA-20/Thursday/us-20-Bienstock-My-Cloud-Is-APTs-Cloud-In
 
 https://insen.github.io/blog/2017/09/24/Azure-AAD-with-Office-365/
 
+https://www.youtube.com/watch?v=zjezqZPPOfc
