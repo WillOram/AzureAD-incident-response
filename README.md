@@ -41,9 +41,6 @@ Rough in-progress notes on Azure AD attack techniques, including techniques used
   * [Azure Sentinel data sources to configure](#azure-sentinel-data-sources-to-configure)
   * [Notes on building a lab](#notes-on-building-a-lab)
 
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
-
 ## Background reading on Azure AD and authentication 
 
 * [Microsoft ITOps | OPS108: Windows authentication internals in a hybrid world](https://techcommunity.microsoft.com/t5/itops-talk-blog/ops108-windows-authentication-internals-in-a-hybrid-world/ba-p/2109557)
@@ -79,6 +76,7 @@ Rough in-progress notes on Azure AD attack techniques, including techniques used
 
 * [Microsoft portals](https://msportals.io/)
 * [Azure AD Red Team Cheat Sheet](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Cloud%20-%20Azure%20Pentest.md)
+* [Azure AD Red Team Cheat Sheet - Fork](https://github.com/rootsecdev/Azure-Red-Team)
 * [Decoding JWTs](https://jwt.ms/)
 
 ## Reconnaissance against Azure AD tenants
