@@ -10,7 +10,7 @@ Nobelium distinguished itself from other threat actors, in its skill and adeptne
 
 We will likely see these techniques trickling down to other threat actors over the next couple of years, after Nobelium has demonstrated how these attacks can be effectively carried out, and how these attacks evade traditional endpoint and network security monitoring. We are also likely to see other threat actors following its lead in primarily targeting cloud services, given the sensitive data organizations are storing  in cloud services, even as they  have yet to understand how best to secure it.
 
-Nobelium has been observed targeting cloud resellers and MSPs, in order to compromise organisations’ Microsoft cloud environments, as well as directly targeting organisations, through phishing, use of compromise credentials and password spraying. 
+Nobelium has been observed targeting cloud resellers and MSPs, in order to gain access to organisations’ Microsoft cloud environments, as well as directly targeting organisations, through phishing, use of compromise credentials and password spraying. 
 
 * [Microsoft: Technical blog on SolarWinds attacks](https://msrc-blog.microsoft.com/2020/12/13/customer-guidance-on-recent-nation-state-cyber-attacks/)
 * [Microsoft: Updated list of Microsoft blogs](https://msrc-blog.microsoft.com/2020/12/21/december-21st-2020-solorigate-resource-center/)
@@ -265,7 +265,7 @@ _Key configurations to review to understand how Azure AD and Microsoft 365 are c
 
 - ADFS Application Configuration
 
-- There are various tools that can help with this including [Hawk](https://github.com/T0pCyber/hawk), [CRT](https://github.com/CrowdStrike/CRT), Azure IR and Mandiant IR. [https://github.com/AzureAD/AzureADAssessment/](https://github.com/AzureAD/AzureADAssessment/)
+- There are various tools that can help with this including [Hawk](https://github.com/T0pCyber/hawk), [CRT](https://github.com/CrowdStrike/CRT), [Azure IR](https://github.com/AzureAD/Azure-AD-Incident-Response-PowerShell-Module),  [Mandiant IR](https://github.com/mandiant/Mandiant-Azure-AD-Investigator) and [Microsoft's Azure AD Assessment tool](https://github.com/AzureAD/AzureADAssessment/).
 
 ## Key logs to identify and preserve in the initial stages of a response
 
