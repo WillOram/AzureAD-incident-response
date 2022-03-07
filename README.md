@@ -8,7 +8,7 @@ Nobelium has been one of the most prolific and technically-sophisticated threat 
 
 Nobelium distinguished itself from other threat actors, in its skill and adeptness at compromising organisations' Azure AD and Microsoft 365 cloud environments. Nobelium has been able to do this by combining both well known techniques (e.g. password spraying) and novel techniques into innovative attack paths that allow them to compromise accounts and gain long-term and stealthy access to data stored in cloud services. This is likely reflective of a significant investment Nobelium has made in researching offensive techniques against Microsoft cloud environments.
 
-We will almost certainly see the techniques and tradecraft Nobelium has developed trickling down to other threat actors over the next couple of years, after Nobelium has demonstrated their effectiveness at gaining stealthy access to data. Nobelium has also demonstrated how these techniques can be used to evade traditional endpoint and network security monitoring, making them especially effective at targeting more organisations with more mature cyber security controls that can reliably detect common attacker techniques on endpoints. 
+We will almost certainly see the techniques and tradecraft Nobelium has developed trickling down to other threat actors over the next couple of years, after Nobelium has demonstrated their effectiveness at gaining stealthy access to data. Nobelium has also demonstrated how these techniques can be used to evade traditional endpoint and network security monitoring, making them especially effective at targeting  organisations with more mature cyber security controls that can reliably detect common attacker techniques on endpoints. 
 
 We are also likely to see other threat actors following Nobelium's lead in targeting cloud services, given the sensitive data organizations are storing in cloud services often without sufficiently considering the security controls required to protect and monitor it.
 
@@ -78,7 +78,7 @@ Key tools to perform incident response against Azure AD and Microsft 365:
 
 -   **Agree response priorities and objectives** to guide decision making during the course of the response.
 
--   **Secure the response team’s communications** to ensure that the attacker is not able to intercept communications (an attacker could have ongoing access to emails if they have compromised the accounts of members of the response team, privileged accounts, or applications and service principals with sensitive permissions).
+-   **Secure the response team’s communications** to ensure that the attacker is not able to intercept communications (an attacker could have ongoing access to emails if they have compromised the accounts of members of the response team, privileged accounts, or applications and service principals with sufficient permissions).
 
 -   **Establish response programme governance and workstreams** to ensure that response activities are effectively coordinated.
 
@@ -107,7 +107,7 @@ Key tools to perform incident response against Azure AD and Microsft 365:
 
 -   **Understand available Azure AD and Microsoft 365 licenses**, and how these are allocated out to employees and accounts.
 
--   **Understand how Azure AD and Office 365 and secured**, including how logs are monitored for security alerts, what security controls / features are configured (e.g. Azure Privileged Identity Management) and privilege groups are reviewed.
+-   **Understand how Azure AD and Office 365 and secured**, including how logs are monitored for security alerts, what security controls / features are configured (e.g. Azure Privileged Identity Management) and how privilege groups are reviewed.
 
 ## Identify and export available logs and configuration information
 
@@ -173,7 +173,7 @@ Optional step that depends on an organisation's response priorities and objectiv
 
 ## Perform a more comprehensive review to identify any persistent access the attacker has gained to accounts systems or data 
 
-The configuration of Azure AD and Microsoft 365, and avaliable logs, should be reviewed for suspicious activity and malicious configuration changes, to identify any persistent access the attacker has gained to accounts, systems or data.
+The configuration of Azure AD and Microsoft 365, as well as avaliable logs, should be reviewed for suspicious activity and malicious configuration changes, to identify any persistent access the attacker has gained to accounts, systems or data.
 
 1. [Hunt for modifications to the configuration of the Azure AD tenant](#hunt-for-modifications-to-the-configuration-of-the-azure-ad-tenant)
 2. [Hunt for Golden SAML attacks](#hunt-for-golden-saml-attacks)
