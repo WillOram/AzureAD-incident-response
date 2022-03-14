@@ -77,6 +77,8 @@ Key tools to perform incident response against Azure AD and Microsft 365:
 Good resources to learn more about Microsoft Sentinel and SQL:
 * [Using KQL in incident response](https://techcommunity.microsoft.com/t5/security-compliance-and-identity/leveraging-the-power-of-kql-in-incident-response/ba-p/3044795)
 
+Details on offensive techniques for simulating these in a lab are covered [here](https://github.com/WillOram/AzureAD-incident-response/blob/main/README-OFFENSIVETECHNIQUES). 
+
 ## Mobilise the incident response team and secure their communications
 
 -   **Agree response priorities and objectives** to guide decision making during the course of the response.
