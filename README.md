@@ -80,7 +80,7 @@ More good resources to learn more about Azure incident response, Microsoft Senti
 * [@reprise_99](https://twitter.com/reprise_99)'s [blog](https://learnsentinel.blog/) and [github repo of Sentinel queries](https://github.com/reprise99/Sentinel-Queries)
 * [Azure Cloud & AI Domain blog](https://azurecloudai.blog/)
 
-Details on offensive techniques for simulating these in a lab are covered [here](https://github.com/WillOram/AzureAD-incident-response/blob/main/README-OFFENSIVETECHNIQUES). 
+Details on Azure AD offensive techniques and how to simulate these in a lab is covered [here](https://github.com/WillOram/AzureAD-incident-response/blob/main/README-OFFENSIVETECHNIQUES). 
 
 ## Mobilise the incident response team and secure their communications
 
