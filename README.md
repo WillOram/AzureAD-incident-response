@@ -216,19 +216,18 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
 
 -   **Review accounts in privileged Azure AD and Exchange roles to identify any accounts added to privileged roles by the attacker**, including whether guest accounts and accounts used by third-parties have been added to privileged roles.
 
--   **Review Azure AD Sign-in logs for suspicious logins to identify the compromise of privileged accounts**, for example for anomalous logins by country, impossible travel logins and logins from cloud services VPNs/VPSs/Azure/AWS/GCP (Note attackers have been seen using [residential IP proxy services or newly provisioned geo located infrastructure](https://www.mandiant.com/resources/russian-targeting-gov-business), to evade MFA and obfuscate logging (e.g. a geographically co-located azure instance))
+-   **Review Azure AD Sign-in logs to identify:** 
+     -   **Suspicious logins**, for example for anomalous logins by country, impossible travel logins and logins from cloud services VPNs/VPSs/Azure/AWS/GCP (Note attackers have been seen using [residential IP proxy services or newly provisioned geo located infrastructure](https://www.mandiant.com/resources/russian-targeting-gov-business), to evade MFA and obfuscate logging (e.g. a geographically co-located azure instance))
+     -   **Password spraying, credential stuffing, brute forcing attacks targeting privileged accounts**, also repeated multi-factor authentication challenges being denied by the user / failing ([Attackers have been seen abusing multi-factor authentication by leveraging “push” notifications on smartphones](https://www.mandiant.com/resources/russian-targeting-gov-business)).
+     -   **Multi-factor authentication requests to a user repeatedly being denied or failing.**
+     -   **The use of legacy protocols** to login to privileged accounts (Attackers bypass requirements for multi-factor authentication by authentication with legacy protocols)
+     -   **Anomalous logins from on-premises infrastructure** (used by attackers to bypass Conditional Access rules and requirements for multi-factor authentication)
 
--   **Review Azure AD Sign-in logs to identify password spraying, credential stuffing, brute forcing attacks targeting privileged accounts**, also repeated multi-factor authentication challenges being denied by the user / failing ([Attackers have been seen abusing multi-factor authentication by leveraging “push” notifications on smartphones](https://www.mandiant.com/resources/russian-targeting-gov-business)).
-
--   **Review Azure AD Sign-in logs to identify multi-factor authentication requests to a user repeatedly being denied or failing.**
-
--   **Review Azure AD Sign-in logs to identify the use of legacy protocols** to login to privileged accounts (Attackers bypass requirements for multi-factor authentication by authentication with legacy protocols)
-
--   **Review Azure AD Sign-in logs to identify anomalous logins from on-premises infrastructure** (used by attackers to bypass Conditional Access rules and requirements for multi-factor authentication)
-
--   **Review for fake devices being associated to privileged accounts**
-
--   **Review for Azure AD Audit logs** for privileged accounts being created, accounts being added to privileged roles, or other suspicious events related to privileged accounts, for example passwords being reset, re-enrolling accounts for MFA. 
+-   **Review Azure AD Audit logs to identify:**
+     -   **Fake devices being associated to privileged accounts**
+     -   **Privileged accounts being created**
+     -   **Accounts being added to privileged roles**
+     -   **Other suspicious events related to privileged accounts, for example passwords being reset, re-enrolling accounts for MFA**
 
 -   **Review risk events and detections associated with privileged account logins**
 
