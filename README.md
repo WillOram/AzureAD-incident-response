@@ -74,8 +74,11 @@ Key tools to perform incident response against Azure AD and Microsft 365:
 * [Azure Sentinel Detections](https://github.com/Azure/Azure-Sentinel/tree/master/Detections)
 * [Office-365-Extractor](https://github.com/PwC-IR/Office-365-Extractor)
 
-Good resources to learn more about Microsoft Sentinel and SQL:
+More good resources to learn more about Azure incident response, Microsoft Sentinel and KQL:
+* [Azure AD incident response playbooks](https://docs.microsoft.com/en-us/security/compass/incident-response-playbooks)
 * [Using KQL in incident response](https://techcommunity.microsoft.com/t5/security-compliance-and-identity/leveraging-the-power-of-kql-in-incident-response/ba-p/3044795)
+* [@reprise_99](https://twitter.com/reprise_99)'s [blog](https://learnsentinel.blog/) and [github repo of Sentinel queries](https://github.com/reprise99/Sentinel-Queries)
+* [Azure Cloud & AI Domain blog](https://azurecloudai.blog/)
 
 Details on offensive techniques for simulating these in a lab are covered [here](https://github.com/WillOram/AzureAD-incident-response/blob/main/README-OFFENSIVETECHNIQUES). 
 
@@ -297,9 +300,9 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
 
 ### Hunt for the compromise of and malicious changes to Azure resources 
 
--   **Identify any malicious changes to permissions on Azure resources** for example adding new owners to subscriptions or resource groups.
+-   **Review Azure Activity logs to identify any malicious changes to permissions on Azure resources** for example adding new owners to subscriptions or resource groups, or changing permissions on storage buckets.
 
--   **Identify whether the attacker used their access to compromise Azure services**, including by reviewing Azure Audit logs to identify use of the Azure Run command to execute commands on VMs, downloading of virtual machine images, creating SAS URLs, listing storage accounts keys, and changing permissions on storage buckets.
+-   **Review Azure Activity logs to identify whether the attacker used their access to compromise Azure services**, including by using the [Azure Run command](https://docs.microsoft.com/en-us/azure/virtual-machines/windows/run-command) to execute commands on VMs, downloading of virtual machine images, creating SAS URLs, or listing storage accounts keys.
 
 -   **Review process and network activity from Azure servers**, for example to identify the attacker compromising VM with managed identities configured
 
@@ -474,7 +477,7 @@ If **Azure AD logs are not already being ingested into a SIEM, there are a two o
 
 -   Exporting via the Unified Audit Logs (UAL). Azure AD logs in the UAL are not stored in the same structure as those in Azure Sentinel. Logs from the UAL can be exported and then manually imported into Azure Data Explorer for analysis. Queries that can be used to search through the UAL logs in Azure Data Explorer are well documented [here](https://m365internals.com/2021/07/13/what-ive-learned-from-doing-a-year-of-cloud-forensics-in-azure-ad/).
 
--   Exporting via the Azure AD Console. Azure AD logs exported using this method are not stored in the same structure as those in Azure Sentinel.
+-   Exporting via the Azure AD Console. Azure AD logs exported using this method are not stored in the same structure as those in Azure Sentinel. Logs can be exported in CSV and JSON with up to 100,000 records per export. 
 
 -   Exporting via PowerShell. Azure AD logs can be exported via PowerShell using the AzureADPreview (_Get-AzureADAuditDirectoryLogs_ and _Get-AzureADAuditSignInLogs_). These can then be converted into JSON and imported into Azure Data Explorer for analysis. These logs will be in the same structure as the logs are present in Azure Sentinel. As a result well documented Sentinel KQL [detection queries](https://github.com/Azure/Azure-Sentinel/tree/master/Detections/AuditLogs) can be run against these with minimal modifications.
 
