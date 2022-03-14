@@ -202,9 +202,9 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
 
 -   **Review Conditional Access rules and configured trusted locations**, for modifications to rules for example adding IPs to trusted locations
 
--   **Review Audit AD Audit logs for any malicious changes to the Azure AD tenant** for example adding [new or modifying existing federation settings](https://github.com/Azure/Azure-Sentinel/blob/master/Detections/AuditLogs/ADFSDomainTrustMods.yaml), or adding new [partner relationships](https://o365blog.com/post/partners/).
+-   **Review Audit AD Audit logs to identify any malicious changes to the Azure AD tenant** for example adding [new or modifying existing federation settings](https://github.com/Azure/Azure-Sentinel/blob/master/Detections/AuditLogs/ADFSDomainTrustMods.yaml), or adding new [partner relationships](https://o365blog.com/post/partners/).
 
--   **Review Azure AD Signin logs** for suspicious signins by third-party partner accounts using delegated administrator privileges.  
+-   **Review Azure AD Signin logs to identify suspicious signins by third-party partner accounts using delegated administrator privileges**.  
  
 ### Hunt for Golden SAML attacks 
 
@@ -214,27 +214,23 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
 
 ### Hunt for the compromise of privileged accounts 
 
--   **Review accounts in privileged Azure AD roles** to identify any accounts added to privileged roles by the attacker.
-
--   **Review privileged Exchange accounts** to identify any accounts added to privileged roles by the attacker.
+-   **Review accounts in privileged Azure AD and Exchange roles to identify any accounts added to privileged roles by the attacker**, including whether guest accounts and accounts used by third-parties have been added to privileged roles.
 
 -   **Review Azure AD Sign-in logs for suspicious logins to identify the compromise of privileged accounts**, for example for anomalous logins by country, impossible travel logins and logins from cloud services VPNs/VPSs/Azure/AWS/GCP (Note attackers have been seen using [residential IP proxy services or newly provisioned geo located infrastructure](https://www.mandiant.com/resources/russian-targeting-gov-business), to evade MFA and obfuscate logging (e.g. a geographically co-located azure instance))
 
--   **Review Azure AD Sign-in logs for password spraying, credential stuffing, brute forcing attacks targeting privileged accounts**, also repeated multi-factor authentication challenges being denied by the user / failing ([Attackers have been seen abusing multi-factor authentication by leveraging “push” notifications on smartphones](https://www.mandiant.com/resources/russian-targeting-gov-business)).
+-   **Review Azure AD Sign-in logs to identify password spraying, credential stuffing, brute forcing attacks targeting privileged accounts**, also repeated multi-factor authentication challenges being denied by the user / failing ([Attackers have been seen abusing multi-factor authentication by leveraging “push” notifications on smartphones](https://www.mandiant.com/resources/russian-targeting-gov-business)).
 
--   **Review Azure AD Sign-in logs for the use of legacy protocols** to login to privileged accounts (Attackers bypass requirements for multi-factor authentication by authentication with legacy protocols)
+-   **Review Azure AD Sign-in logs to identify multi-factor authentication requests to a user repeatedly being denied or failing.**
 
--   **Review Azure AD Sign-in logs for anomalous logins from on-premises infrastructure** (used by attackers to bypass Conditional Access rules and requirements for multi-factor authentication)
+-   **Review Azure AD Sign-in logs to identify the use of legacy protocols** to login to privileged accounts (Attackers bypass requirements for multi-factor authentication by authentication with legacy protocols)
+
+-   **Review Azure AD Sign-in logs to identify anomalous logins from on-premises infrastructure** (used by attackers to bypass Conditional Access rules and requirements for multi-factor authentication)
 
 -   **Review for fake devices being associated to privileged accounts**
 
 -   **Review for Azure AD Audit logs** for privileged accounts being created, accounts being added to privileged roles, or other suspicious events related to privileged accounts, for example passwords being reset, re-enrolling accounts for MFA. 
 
 -   **Review risk events and detections associated with privileged account logins**
-
--   **Review the permissions of guest accounts and accounts used by third-parties** to identify evidence of accounts being added to privileged roles by the attacker.
-
--   **Review for Azure AD Sign-in logs for suspicious sign-ins from third-parties with partner relationships via delegated administrator permissions**
 
 ### Hunt for hijacked Azure AD Applications and Service Principals 
 
@@ -246,11 +242,7 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
 
 -   **Review all Azure AD logs for suspicious sign-ins by Service Principals with sensitive permissions** to identify compromised services principals (including considering whether **third-party Service Principal credentials** have been compromised) 
 
--   **Review Azure AD Audit logs for the creation of Service Principals and Applications**
-
--   **Review Azure AD Audit logs to identify the addition of credentials to Service Principals and Applications**
-
--   **Review Azure AD Audit logs to identify any malicious changes to Azure AD** for example adding sensitive permissions to Applications or Service Principals.
+-   **Review Azure AD Audit logs** to identify the malicous creation of Service Principals and Applications, the addition of credentials to Service Principals and Applications, and sensitive permissions being added to Applications or Service Principals.
 
 ### Hunt for malicious modifications to mailboxes and the Exchange Online configuration 
 
