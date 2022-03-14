@@ -74,6 +74,9 @@ Key tools to perform incident response against Azure AD and Microsft 365:
 * [Azure Sentinel Detections](https://github.com/Azure/Azure-Sentinel/tree/master/Detections)
 * [Office-365-Extractor](https://github.com/PwC-IR/Office-365-Extractor)
 
+Good resources to learn more about Microsoft Sentinel and SQL:
+* [Using KQL in incident response](https://techcommunity.microsoft.com/t5/security-compliance-and-identity/leveraging-the-power-of-kql-in-incident-response/ba-p/3044795)
+
 ## Mobilise the incident response team and secure their communications
 
 -   **Agree response priorities and objectives** to guide decision making during the course of the response.
@@ -86,7 +89,7 @@ Key tools to perform incident response against Azure AD and Microsft 365:
 
 ## Understand how users are authenticated and how Azure AD and Microsoft 365 are configured
 
--   **Map out the authentication flows for how users are authenticated**, including what trusted domains are configured in Azure AD, what authentication methods these domains use, and if federated authentication is configured.
+-   **Map out the authentication flows for how users are authenticated**, including what trusted domains are configured, what authentication methods these domains use, and if federated, pass-the-hash, or pass-through-authentication is configured.
 
 -   **Understand how Azure AD and Microsoft 365 are configured** including what accounts have privileged roles, what trust relationships exist with cloud service providers and how third-parties administer the environment, including reviewing:
     - Trusted domains and federation settings with on-premises Active Directory domains (MSOnline: Get-MsolDomain, Get-MsolFederationProperty)
@@ -153,11 +156,11 @@ Complete-AADAssessmentReports and New-AADAssessmentRecommendations).
 
 Optional step that depends on an organisation's response priorities and objectives. 
 
--   **Disable known compromised accounts**
+-   **Disable known compromised accounts, revoke the account's Azure AD refresh tokens and disable registered devices** ([see this Microsoft article](https://docs.microsoft.com/en-us/azure/active-directory/enterprise-users/users-revoke-access) on the different types of authentication tokens and how to revoke all access for a user)
 
 -   **Block logins for known bad IP addresses**, with Conditional Access rules 
 
--   **Remove delegated administrator permissions** from partner relationships 
+-   **Remove delegated administrator permissions** from partner relationships (requires an account with Global Admin permissions)
 
 -   **Create break-glass Global Admin accounts, monitor their usage and securely store the passwords**
 
@@ -167,7 +170,9 @@ Optional step that depends on an organisation's response priorities and objectiv
 
 -   **Rotate credentials for Service Principals and Applications and revoke refresh tokens**
 
--   **Reset passwords of all privileged accounts and revoke refresh tokens**
+-   **Reset passwords of all privileged accounts, revoke Azure AD refresh tokens and audit registered devices** 
+
+-   **Configure number matching in multifactor authentication (MFA) notifications**
 
 -   **Review guest / third-party accounts and disable accounts where possible**
 
@@ -228,7 +233,7 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
 
 ### Hunt for hijacked Azure AD Applications and Service Principals 
 
--   **Identify Applications and Service Principal with sensitive "Application" Microsoft Graph API permissions configured, and other sensitive application specific API permissions**, including AppRoleAssignment.ReadWrite.All, RoleManagement.ReadWrite.Directory, and Mail.Read
+-   **Identify Applications and Service Principal with sensitive "Application" Microsoft Graph API permissions configured, and other sensitive application specific API permissions**, including AppRoleAssignment.ReadWrite.All, RoleManagement.ReadWrite.Directory, and Mail.Read. 
 
 -  **Identify Service Principals with both credentials and sensitive permissions** to identify the malicious addition of credentials to new or existing Service Principals including "first party" Microsoft / built-in by default Service Principals ([T1098.001](https://attack.mitre.org/techniques/T1098/001/)) (AzureAD: Get-AzureADServicePrincipal -All $True) 
 
@@ -338,11 +343,11 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
 
 -   **Create break glass global administrator accounts and ensure that these are excluded from all Conditional Access policies**
 
--   **Reset passwords of all privileged Azure AD accounts and revoke refresh tokens**
+-   **Reset passwords for known compromised accounts, revoke the account's Azure AD refresh tokens and disable registered devices** ([see this Microsoft article](https://docs.microsoft.com/en-us/azure/active-directory/enterprise-users/users-revoke-access) on the different types of authentication tokens and how to revoke all access for a user)
+
+-   **Reset passwords of all privileged Azure AD accounts, revoke refresh tokens and audit registered devices**
 
 -   **Rotate credential material for any Service Principals that are members of privileged roles and revoke refresh tokens**
-
--   **Reset passwords for known compromised accounts and revoke refresh tokens**
 
 -   **Block legacy authentication methods and review conditional access policies that are configured**
 
@@ -351,19 +356,20 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
 -   **Assess what other authentication material the attacker would have been able to generate / steal** with the accounts they were able to compromise, and whether there was sufficient logging to confirm this (e.g. creating shared access signatures for Azure Storage accounts) and take steps to mitigate this risk.
 
 ### Active Directory 
+
 -   **Remove domain administrator privileges from all on-premises user accounts and service accounts**, apart from those used by the remediation team and for break glass accounts.
 
 -   **Identify, review and harden access to all on-premises Tier 0 systems**
 
 -   **Remediate accounts in the on-premises environment**, including:  
+    - Disable or reset the password of all known compromised accounts twice 
     - Resetting all privileged accounts  
     - Resetting the AZUREADSSOACC account  
     - Resetting the on-premises AD DS connector account  
     - Resetting the Azure AD connector account  
     - Resetting the on-premises ADSync Service Account  
     - Resetting the local accounts on DCs  
-    - Rotating the 
-    token-signing certificate twice  
+    - Rotating the token-signing certificate twice  
     - Resetting the Kerberos ticket granting ticket account twice  
     - Rotating secrets associated with remote access MFA token generation
 
@@ -384,6 +390,8 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
 -   **Deploy Azure AD Password Protection** to detect and block known weak passwords.
 
 -   **Remove delegated administrator permissions** from partner relationships, and migrate to [granular delegated admin privileges (GDAP)](https://docs.microsoft.com/en-us/partner-center/gdap-introduction) if still required.
+
+-   **Configure [number matching for multifactor authentication](https://docs.microsoft.com/en-us/azure/active-directory/authentication/how-to-mfa-number-match) push notifications** 
 
 -   **Perform an enterprise-wide passwords reset**, including resetting all service accounts and configuring employee accounts to change password at next logon.
 
@@ -429,7 +437,7 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
 
 -   **Reduce the risk of phishing attacks,** including by deploying email tooling that restricts attachment file-types and scans for malicious content, and by deploying always-on web security tooling that blocks malicious content and website categories.
 
--   **Harden workstations used by employees**, including by hardening endpoints to restrict the execution of untrusted scripts and executables (including with EPP tooling and Attack Surface Reduction rules), removing local administrator privileges from standard accounts and restricting the execution of untrusted Microsoft Office macros.
+-   **Harden workstations used by employees**, including by hardening endpoints to restrict the execution of untrusted scripts and executables (including with EPP tooling, [WDAC and AppLocker](https://docs.microsoft.com/en-us/windows/security/threat-protection/windows-defender-application-control/wdac-and-applocker-overview) and by blocking [executables commonly used to circumvent these](https://docs.microsoft.com/en-us/windows/security/threat-protection/windows-defender-application-control/microsoft-recommended-block-rules)), configuring [Attack Surface Reduction rules](https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction?view=o365-worldwide), and removing local administrator privileges from standard accounts and restricting the execution of untrusted Microsoft Office macros.
 
 -   **Improve the security of the on-premises environment**, including by restricting internet access for all servers to an allow list, proactive hunting for Active Directory hygiene issues (including by running [PingCastle](https://www.pingcastle.com/),  [Bloodhound](https://github.com/BloodHoundAD/BloodHound) and [Trimarc ADChecks](https://www.hub.trimarcsecurity.com/post/securing-active-directory-performing-an-active-directory-security-review)), and performing regular internal vulnerability scanning.
 
