@@ -227,7 +227,7 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
      -   **Fake devices being associated to privileged accounts**
      -   **Privileged accounts being created**
      -   **Accounts being added to privileged roles**
-     -   **Other suspicious events related to privileged accounts, for example passwords being reset, re-enrolling accounts for MFA**
+     -   **Other suspicious events related to privileged accounts, for example passwords being reset, and re-enrolling accounts for MFA**
 
 -   **Review risk events and detections associated with privileged account logins**
 
