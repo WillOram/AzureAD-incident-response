@@ -331,13 +331,13 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
 
 -   **Remediate the initial access method used by the attacker**, for example by setting strong passwords,  enabling MFA on compromised accounts, disabling compromised accounts and removing delegated administrator permissions.
 
--   **Remove accounts from privileged Azure AD roles** unless strictly required (all privileged roles should be removed from accounts that are configured to sync with on-premises Active Directory domain).
+-   **Remove accounts from privileged Azure AD roles** unless strictly required.
+
+-   **Ensure all privileged accounts have multi-factor authentication enforced (using verification codes or hardware tokens) and are not configured to sync with on-premises Active Directory domains.**
 
 -   **Remove sensitive permissions from Service Principals** unless strictly required in order for the AAD applications to function.
 
--   **Limit privileged access to the tenant**, by configuring conditional access to limit the use of accounts with privileged roles, including enforcing multi-factor authentication using verification codes or hardware tokens, and restricting their use to [privileged access workstations](https://docs.microsoft.com/en-us/security/compass/privileged-access-devices).
-
--   **Create break glass global administrator accounts and ensure that these are excluded from all Conditional Access policies**
+-   **Create break glass Global Aministrator accounts and ensure that these are excluded from all Conditional Access policies**
 
 -   **Reset passwords for known compromised accounts, revoke the account's Azure AD refresh tokens and disable registered devices** ([see this Microsoft article](https://docs.microsoft.com/en-us/azure/active-directory/enterprise-users/users-revoke-access) on the different types of authentication tokens and how to revoke all access for a user)
 
@@ -383,13 +383,15 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
 
 ## Improve security posture to defend against further attacks
 
+-   **Remove delegated administrator permissions** from partner relationships, and migrate to [granular delegated admin privileges (GDAP)](https://docs.microsoft.com/en-us/partner-center/gdap-introduction) if access is still required.
+
+-   **Add Azure AD P2 licenses for administrator accounts, configure Privileged Identity Manager (PIM) and remove all accounts from the Global Admin role** (except break glass accounts), set eligible assignments to accounts for Azure AD roles that can be activated for time limited periods. 
+
 -   **Deploy Azure AD Password Protection** to detect and block known weak passwords.
 
--   **Remove delegated administrator permissions** from partner relationships, and migrate to [granular delegated admin privileges (GDAP)](https://docs.microsoft.com/en-us/partner-center/gdap-introduction) if still required.
+-   **Perform an enterprise-wide passwords reset**, including resetting all service accounts and configuring employee accounts to change password at next logon.
 
 -   **Configure [number matching for multifactor authentication](https://docs.microsoft.com/en-us/azure/active-directory/authentication/how-to-mfa-number-match) push notifications** 
-
--   **Perform an enterprise-wide passwords reset**, including resetting all service accounts and configuring employee accounts to change password at next logon.
 
 -   **Roll-out, configure and enforce multi-factor authentication for all user accounts** using conditional access policies.
 
@@ -420,8 +422,6 @@ The configuration of Azure AD and Microsoft 365, as well as avaliable logs, shou
 -   **Review Microsoft Secure Secure, triage and implement remediation recommendations**
 
 -   **Assign responsibility for regally auditing Azure AD and Microsoft 365 configuration**, including Applications and Service Principals, federation trust settings, Conditional Access policies, trust relationships and Microsoft Secure Score recommendations
-
--   **Enable Privileged Identity Manager in Azure AD** and set eligible assignments to Azure AD roles where these can be activated for a limited time when needed.
 
 -   **Configure** [**Privileged Access Management**](https://techcommunity.microsoft.com/t5/microsoft-security-and/privileged-access-management-in-office-365-is-now-generally/ba-p/261751) **in Microsoft 365**
 
