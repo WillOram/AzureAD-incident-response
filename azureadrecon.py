@@ -19,6 +19,11 @@ Return Azure AD tenant information, including:
     - The token-signing certificates configured in ADFS for any federated domains that use ADFS
 """, formatter_class=RawTextHelpFormatter)
 
+parser.add_argument('--domain', type=str, required=True,
+                    help='Domain to enumerate')
+parser.add_argument('--outfile', type=str, required=True,
+                    help='CSV output file')
+
 args = parser.parse_args()
 domain = args.domain
 csv_filename = args.outfile
